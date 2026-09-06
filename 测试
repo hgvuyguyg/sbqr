@@ -878,7 +878,7 @@ local function createButtonCard(parent, name, desc, icon, url)
     end)
 end
 -- 第2段结束
--- 主脚本 第3段-A：createFeatureToggle 前半部分（从开头到 infjump 之前）
+-- 主脚本 第3段-A：createFeatureToggle（前半部分）
 
 local function createFeatureToggle(parent, name, description, icon, runCode)
     local Card = Instance.new("Frame")
@@ -1159,7 +1159,16 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 end
             elseif runCode == "screenfx" then
                 local fx = Instance.new("ColorCorrectionEffect"); fx.Name = "ScreenFX"; fx.TintColor = Color3.fromRGB(255, 100, 200); fx.Parent = Lighting
-            elseif runCode == "trail" then
+            end
+        end
+    end)
+end
+-- 第3段-A结束
+-- 主脚本 第3段-B：createFeatureToggle（后半部分）
+
+        if toggleState then
+            -- 接第3段-A的 if toggleState 分支
+            if runCode == "trail" then
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("HumanoidRootPart") then
                     local hrp = c.HumanoidRootPart
@@ -1307,12 +1316,19 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                         cancelBtn.MouseButton1Click:Connect(function() if curHl then curHl:Destroy() end; cg:Destroy() end)
                     end
                 end)
+            elseif runCode == "infjump" then
+                infJumpEnabled = true
+                infJumpConnection = UserInputService.JumpRequest:Connect(function()
+                    if infJumpEnabled then
+                        local c = Players.LocalPlayer.Character
+                        if c and c:FindFirstChild("Humanoid") then
+                            c.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                        end
+                    end
+                end)
             end
--- 第3段-A结束
--- 主脚本 第3段-B：createFeatureToggle 后半部分（从 infjump 到结尾 + 关闭逻辑）
-
-            elseif runCode == "infjump" then infJumpEnabled = true; infJumpConnection = UserInputService.JumpRequest:Connect(function() if infJumpEnabled then local c = Players.LocalPlayer.Character; if c and c:FindFirstChild("Humanoid") then c.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end end end) end
         else
+            -- 关闭逻辑
             Toggle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
             ToggleKnob:TweenPosition(UDim2.new(0, 2, 0, 2), "Out", "Quad", 0.15)
             if runCode == "esp" then disableESP()
@@ -1331,7 +1347,9 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
             elseif runCode == "invisible" then
                 local c = Players.LocalPlayer.Character
                 if c then for _, v in ipairs(c:GetDescendants()) do if v:IsA("BasePart") then v.Transparency = 0 end end end
-            elseif runCode == "noclip" then local c = Players.LocalPlayer.Character; if c then for _, v in ipairs(c:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = true end end end
+            elseif runCode == "noclip" then
+                local c = Players.LocalPlayer.Character
+                if c then for _, v in ipairs(c:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = true end end end
             elseif runCode == "god" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
             elseif runCode == "teamglow" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end; clearTeamGlow()
             elseif runCode == "enemyglow" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end; clearEnemyGlow()
@@ -1423,7 +1441,8 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                     end
                 end
             elseif runCode == "deletepart" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
-            elseif runCode == "infjump" then infJumpEnabled = false; if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end end
+            elseif runCode == "infjump" then infJumpEnabled = false; if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            end
         end
     end)
 end
