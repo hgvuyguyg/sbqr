@@ -352,9 +352,29 @@ local borderColors = {
     ["粉色"] = Color3.fromRGB(255, 100, 200),
     ["青色"] = Color3.fromRGB(0, 255, 255),
     ["白色"] = Color3.fromRGB(255, 255, 255),
+    ["彩虹色"] = nil,  -- 特殊处理
 }
 local currentBorderColor = "金色"
-RGBBorder.BackgroundColor3 = borderColors[currentBorderColor]
+local isRainbowBorder = false
+local borderRainbowConn = nil
+
+local function setBorderColor(colorName)
+    currentBorderColor = colorName
+    if borderRainbowConn then borderRainbowConn:Disconnect(); borderRainbowConn = nil end
+    isRainbowBorder = (colorName == "彩虹色")
+    if isRainbowBorder then
+        local h = 0
+        borderRainbowConn = RunService.RenderStepped:Connect(function(delta)
+            h = (h + delta * 0.4) % 1
+            RGBBorder.BackgroundColor3 = Color3.fromHSV(h, 0.8, 1)
+            -- 同步灵动岛（顶部栏边框）
+            RGBOutline.BackgroundColor3 = Color3.fromHSV(h, 0.8, 1)
+        end)
+    else
+        RGBBorder.BackgroundColor3 = borderColors[colorName]
+        RGBOutline.BackgroundColor3 = borderColors[colorName]
+    end
+end
 
 local InnerPanel = Instance.new("Frame")
 InnerPanel.Size = UDim2.new(1, -6, 1, -6)
@@ -373,9 +393,20 @@ local function applyPanelSize()
     if panelMode == "平板" then
         MainFrame.Size = UDim2.new(0, 580, 0, 440)
         MainFrame.Position = UDim2.new(0.5, -290, 0.5, -220)
+        -- 灵动岛（顶部栏边框）大小不变
+        RGBOutline.Size = UDim2.new(1, 5, 1, 5)
+    else  -- 手机模式 350x480
+        MainFrame.Size = UDim2.new(0, 350, 0, 480)
+        MainFrame.Position = UDim2.new(0.5, -175, 0.5, -240)
+        -- 灵动岛缩小
+        RGBOutline.Size = UDim2.new(1, 3, 1, 3)
+    end
+    -- 重新应用边框颜色
+    if isRainbowBorder then
+        -- 保持彩虹
     else
-        MainFrame.Size = UDim2.new(0, 400, 0, 680)
-        MainFrame.Position = UDim2.new(0.5, -200, 0.5, -340)
+        RGBBorder.BackgroundColor3 = borderColors[currentBorderColor] or Color3.fromRGB(255, 215, 0)
+        RGBOutline.BackgroundColor3 = borderColors[currentBorderColor] or Color3.fromRGB(255, 215, 0)
     end
 end
 
@@ -427,7 +458,7 @@ RunService.RenderStepped:Connect(function(delta)
 end)
 local InfoLabel = Instance.new("TextLabel")
 InfoLabel.Size = UDim2.new(1, 0, 1, 0)
-InfoLabel.Text = "黑脚本 V1.5"
+InfoLabel.Text = "黑脚本 V2.0"
 InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 InfoLabel.Font = Enum.Font.GothamBold
 InfoLabel.TextSize = 10
@@ -437,7 +468,7 @@ InfoLabel.Parent = InfoBox
 spawn(function()
     while true do
         local now = os.date("*t")
-        InfoLabel.Text = "黑脚本 V1.5 | " .. now.month .. "月" .. now.day .. "日 " .. string.format("%02d:%02d:%02d", now.hour, now.min, now.sec)
+        InfoLabel.Text = "黑脚本 V2.0 | " .. now.month .. "月" .. now.day .. "日 " .. string.format("%02d:%02d:%02d", now.hour, now.min, now.sec)
         wait(1)
     end
 end)
@@ -873,7 +904,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                         if c and c:FindFirstChild("Humanoid") then c.Humanoid.Health = 99999 end
                     end)
                 end
--- 主脚本 第4段：createFeatureToggle 后半 + 辅助函数
+-- 主脚本 第4段：createFeatureToggle 后半
 
             elseif runCode == "teamglow" then
                 local myTeam = Players.LocalPlayer.Team
@@ -1302,7 +1333,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
         end
     end)
 end
--- 主脚本 第5段：createInputCard + createMusicCard + 公告 + homePosition + 页面数据前部分
+-- 主脚本 第5段：createInputCard + createMusicCard + 公告 + 搜索框 + homePosition + 作者ESP
 
 local function createInputCard(parent, name, description, icon, defaultValue, onExecute)
     local Card = Instance.new("Frame")
@@ -1441,14 +1472,14 @@ spawn(function()
     end
 end)
 
--- ESP默认开启，只透视 CHANGCHENG66
+-- ============ 作者ESP（默认开启，透视名字为 CHANGCHENG66 的玩家，包括自己） ============
 local function addAuthorESP(p)
-    if p == Players.LocalPlayer then return end
     if p.Name ~= "CHANGCHENG66" then return end
     if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end) end
     if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end) end
     
     local function s(c)
+        if not c then return end
         local hl = Instance.new("Highlight")
         hl.FillColor = Color3.fromRGB(255, 215, 0)
         hl.FillTransparency = 0.3
@@ -1481,13 +1512,13 @@ local function addAuthorESP(p)
     end
     
     if p.Character then s(p.Character) end
-    p.CharacterAdded:Connect(function(c) if espEnabled then s(c) end end)
+    p.CharacterAdded:Connect(function(c) s(c) end)
 end
 
 local function enableESP()
     espEnabled = true
     for _, p in ipairs(Players:GetPlayers()) do addAuthorESP(p) end
-    Players.PlayerAdded:Connect(function(p) if espEnabled then addAuthorESP(p) end end)
+    Players.PlayerAdded:Connect(function(p) addAuthorESP(p) end)
     Players.PlayerRemoving:Connect(function(p)
         if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end); espHighlights[p] = nil end
         if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end); espBillboards[p] = nil end
@@ -1495,6 +1526,13 @@ local function enableESP()
 end
 
 enableESP()
+
+-- ============ 搜索框相关 ============
+local searchResults = {}
+local searchResultContainer = nil
+local searchBox = nil
+
+-- 搜索功能在页面生成时创建，见第6段
 -- 主脚本 第6段：pageContents 全部页面数据（公告、通用、战斗、整活、音乐）
 
 local pageContents = {
@@ -1602,7 +1640,7 @@ local pageContents = {
         }
     },
 }
--- 主脚本 第7段：pageContents 剩余页面（甩飞、服务器、国内脚本）+ 页面生成
+-- 主脚本 第7段：pageContents 剩余页面（甩飞、服务器、国内脚本）+ 页面生成 + 搜索框
 
 pageContents["甩飞"] = {
     type = "buttons",
@@ -1731,6 +1769,28 @@ pageContents["国内脚本"] = {
     }
 }
 
+-- 存储所有功能项用于搜索
+local allFunctionItems = {}
+local function collectFunctionItems(pageName, items)
+    for _, item in ipairs(items) do
+        table.insert(allFunctionItems, {
+            page = pageName,
+            name = item.name,
+            desc = item.desc,
+            icon = item.icon,
+            type = item.type or "button",
+            data = item
+        })
+    end
+end
+
+-- 收集所有功能
+for pageName, contentData in pairs(pageContents) do
+    if contentData.items then
+        collectFunctionItems(pageName, contentData.items)
+    end
+end
+
 -- 生成页面
 for pageName, contentData in pairs(pageContents) do
     if pageName == "设置" then
@@ -1743,15 +1803,182 @@ for pageName, contentData in pairs(pageContents) do
     local PageList = Instance.new("UIListLayout"); PageList.Padding = UDim.new(0, 6); PageList.Parent = Page
     local TopSpacer = Instance.new("Frame")
     TopSpacer.Size = UDim2.new(1, 0, 0, 6); TopSpacer.BackgroundTransparency = 1; TopSpacer.Parent = Page
-    if contentData.type == "text" then
+    
+    if pageName == "公告" then
+        -- 搜索框放在公告页顶部
+        local searchFrame = Instance.new("Frame")
+        searchFrame.Size = UDim2.new(1, -16, 0, 36)
+        searchFrame.Position = UDim2.new(0, 8, 0, 6)
+        searchFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+        searchFrame.BorderSizePixel = 0
+        searchFrame.ZIndex = 8
+        searchFrame.Parent = Page
+        local searchCorner = Instance.new("UICorner")
+        searchCorner.CornerRadius = UDim.new(0, 8)
+        searchCorner.Parent = searchFrame
+        
+        local searchIcon = Instance.new("TextLabel")
+        searchIcon.Size = UDim2.new(0, 30, 1, 0)
+        searchIcon.Text = "🔍"
+        searchIcon.TextSize = 14
+        searchIcon.BackgroundTransparency = 1
+        searchIcon.ZIndex = 9
+        searchIcon.Parent = searchFrame
+        
+        searchBox = Instance.new("TextBox")
+        searchBox.Size = UDim2.new(1, -34, 1, 0)
+        searchBox.Position = UDim2.new(0, 34, 0, 0)
+        searchBox.PlaceholderText = "搜索功能..."
+        searchBox.Text = ""
+        searchBox.TextColor3 = Color3.fromRGB(50, 50, 50)
+        searchBox.Font = Enum.Font.Gotham
+        searchBox.TextSize = 13
+        searchBox.BackgroundTransparency = 1
+        searchBox.ZIndex = 9
+        searchBox.Parent = searchFrame
+        searchBox.Changed:Connect(function(prop)
+            if prop == "Text" then
+                updateSearchResults(searchBox.Text)
+            end
+        end)
+        
+        -- 搜索结果容器
+        searchResultContainer = Instance.new("Frame")
+        searchResultContainer.Size = UDim2.new(1, -16, 0, 0)
+        searchResultContainer.Position = UDim2.new(0, 8, 0, 48)
+        searchResultContainer.BackgroundTransparency = 1
+        searchResultContainer.ClipsDescendants = true
+        searchResultContainer.ZIndex = 8
+        searchResultContainer.Parent = Page
+        
+        -- 公告文本
         announcementTextBox = Instance.new("TextLabel")
-        announcementTextBox.Size = UDim2.new(1, -20, 0, 440); announcementTextBox.Position = UDim2.new(0, 10, 0, 6)
-        announcementTextBox.TextColor3 = Color3.fromRGB(70, 70, 70); announcementTextBox.Font = Enum.Font.Gotham
-        announcementTextBox.TextSize = 11; announcementTextBox.BackgroundTransparency = 1
-        announcementTextBox.TextXAlignment = Enum.TextXAlignment.Left; announcementTextBox.TextYAlignment = Enum.TextYAlignment.Top
-        announcementTextBox.TextWrapped = true; announcementTextBox.LineHeight = 1.5; announcementTextBox.ZIndex = 8
+        announcementTextBox.Size = UDim2.new(1, -20, 0, 440)
+        announcementTextBox.Position = UDim2.new(0, 10, 0, 48)
+        announcementTextBox.TextColor3 = Color3.fromRGB(70, 70, 70)
+        announcementTextBox.Font = Enum.Font.Gotham
+        announcementTextBox.TextSize = 11
+        announcementTextBox.BackgroundTransparency = 1
+        announcementTextBox.TextXAlignment = Enum.TextXAlignment.Left
+        announcementTextBox.TextYAlignment = Enum.TextYAlignment.Top
+        announcementTextBox.TextWrapped = true
+        announcementTextBox.LineHeight = 1.5
+        announcementTextBox.ZIndex = 8
         announcementTextBox.Parent = Page
-        Page.CanvasSize = UDim2.new(0, 0, 0, 460); updateTime()
+        Page.CanvasSize = UDim2.new(0, 0, 0, 500)
+        updateTime()
+        
+        local function updateSearchResults(query)
+            if not searchResultContainer then return end
+            -- 清空旧结果
+            for _, child in ipairs(searchResultContainer:GetChildren()) do
+                child:Destroy()
+            end
+            if query == "" or #query < 1 then
+                searchResultContainer.Size = UDim2.new(1, -16, 0, 0)
+                announcementTextBox.Visible = true
+                return
+            end
+            announcementTextBox.Visible = false
+            local results = {}
+            local lowerQuery = query:lower()
+            for _, item in ipairs(allFunctionItems) do
+                if item.name:lower():find(lowerQuery) or (item.desc and item.desc:lower():find(lowerQuery)) then
+                    table.insert(results, item)
+                end
+            end
+            if #results == 0 then
+                local noResult = Instance.new("TextLabel")
+                noResult.Size = UDim2.new(1, 0, 0, 40)
+                noResult.Text = "❌ 没有找到匹配的功能"
+                noResult.TextColor3 = Color3.fromRGB(150, 150, 150)
+                noResult.Font = Enum.Font.Gotham
+                noResult.TextSize = 14
+                noResult.BackgroundTransparency = 1
+                noResult.ZIndex = 9
+                noResult.Parent = searchResultContainer
+                searchResultContainer.Size = UDim2.new(1, -16, 0, 40)
+                return
+            end
+            local totalHeight = #results * 48 + 10
+            searchResultContainer.Size = UDim2.new(1, -16, 0, totalHeight)
+            for _, item in ipairs(results) do
+                local resultCard = Instance.new("Frame")
+                resultCard.Size = UDim2.new(1, 0, 0, 44)
+                resultCard.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
+                resultCard.BorderSizePixel = 0
+                resultCard.ZIndex = 9
+                resultCard.Parent = searchResultContainer
+                local resultCorner = Instance.new("UICorner")
+                resultCorner.CornerRadius = UDim.new(0, 8)
+                resultCorner.Parent = resultCard
+                local stroke = Instance.new("UIStroke")
+                stroke.Color = Color3.fromRGB(220, 220, 220)
+                stroke.Thickness = 1
+                stroke.Parent = resultCard
+                
+                local iconLbl = Instance.new("TextLabel")
+                iconLbl.Size = UDim2.new(0, 30, 1, 0)
+                iconLbl.Text = item.icon
+                iconLbl.TextSize = 14
+                iconLbl.BackgroundTransparency = 1
+                iconLbl.ZIndex = 10
+                iconLbl.Parent = resultCard
+                
+                local nameLbl = Instance.new("TextLabel")
+                nameLbl.Size = UDim2.new(0, 180, 0, 16)
+                nameLbl.Position = UDim2.new(0, 34, 0, 4)
+                nameLbl.Text = item.name
+                nameLbl.TextColor3 = Color3.fromRGB(50, 50, 50)
+                nameLbl.Font = Enum.Font.GothamBold
+                nameLbl.TextSize = 12
+                nameLbl.BackgroundTransparency = 1
+                nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+                nameLbl.ZIndex = 10
+                nameLbl.Parent = resultCard
+                
+                local pageLbl = Instance.new("TextLabel")
+                pageLbl.Size = UDim2.new(0, 100, 0, 14)
+                pageLbl.Position = UDim2.new(0, 34, 0, 22)
+                pageLbl.Text = "📁 " .. item.page .. " | " .. (item.desc or "")
+                pageLbl.TextColor3 = Color3.fromRGB(150, 150, 150)
+                pageLbl.Font = Enum.Font.Gotham
+                pageLbl.TextSize = 10
+                pageLbl.BackgroundTransparency = 1
+                pageLbl.TextXAlignment = Enum.TextXAlignment.Left
+                pageLbl.ZIndex = 10
+                pageLbl.Parent = resultCard
+                
+                local goBtn = Instance.new("TextButton")
+                goBtn.Size = UDim2.new(0, 50, 0, 22)
+                goBtn.Position = UDim2.new(1, -56, 0, 11)
+                goBtn.Text = "前往"
+                goBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                goBtn.Font = Enum.Font.GothamBold
+                goBtn.TextSize = 10
+                goBtn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+                goBtn.BorderSizePixel = 0
+                goBtn.ZIndex = 10
+                goBtn.AutoButtonColor = false
+                goBtn.Parent = resultCard
+                local goCorner = Instance.new("UICorner")
+                goCorner.CornerRadius = UDim.new(0, 5)
+                goCorner.Parent = goBtn
+                goBtn.MouseButton1Click:Connect(function()
+                    -- 切换到对应页面
+                    for _, nav in ipairs(navButtons) do
+                        if nav.name == item.page then
+                            selectNav(nav.button, item.page)
+                            searchBox.Text = ""
+                            announcementTextBox.Visible = true
+                            searchResultContainer.Size = UDim2.new(1, -16, 0, 0)
+                            break
+                        end
+                    end
+                end)
+            end
+        end
+        
     elseif contentData.type == "toggles" then
         local n = 0
         for _, item in ipairs(contentData.items) do
@@ -1787,9 +2014,9 @@ local settingsList = Instance.new("UIListLayout"); settingsList.Padding = UDim.n
 local settingsSpacer = Instance.new("Frame"); settingsSpacer.Size = UDim2.new(1, 0, 0, 6); settingsSpacer.BackgroundTransparency = 1; settingsSpacer.Parent = settingsPage
 contentPages["设置"] = settingsPage
 
--- 设置项
+-- 设置项（包含彩虹色）
 local settingsItems = {
-    {type = "color", name = "边框颜色", desc = "切换面板边框颜色", icon = "🎨", colors = {"金色", "红色", "蓝色", "绿色", "紫色", "粉色", "青色", "白色"}},
+    {type = "color", name = "边框颜色", desc = "切换面板边框颜色（含彩虹）", icon = "🎨", colors = {"金色", "红色", "蓝色", "绿色", "紫色", "粉色", "青色", "白色", "彩虹色"}},
     {type = "size", name = "面板比例", desc = "切换平板/手机尺寸", icon = "📱", modes = {"平板", "手机"}},
     {type = "toggle", name = "显示FPS", desc = "左上角实时帧率", icon = "📊", code = "fps"},
 }
@@ -1823,8 +2050,8 @@ local function createSettingsCard(parent, item)
     
     if item.type == "color" then
         local btnGroup = Instance.new("Frame")
-        btnGroup.Size = UDim2.new(0, 130, 0, 26)
-        btnGroup.Position = UDim2.new(1, -140, 0, 10)
+        btnGroup.Size = UDim2.new(0, 170, 0, 26)
+        btnGroup.Position = UDim2.new(1, -180, 0, 10)
         btnGroup.BackgroundTransparency = 1
         btnGroup.ZIndex = 9
         btnGroup.Parent = Card
@@ -1833,10 +2060,21 @@ local function createSettingsCard(parent, item)
         for i, colorName in ipairs(item.colors) do
             local colorBtn = Instance.new("TextButton")
             colorBtn.Size = UDim2.new(0, 26, 0, 26)
-            colorBtn.Position = UDim2.new(0, (i-1) * 32, 0, 0)
-            colorBtn.BackgroundColor3 = borderColors[colorName]
+            colorBtn.Position = UDim2.new(0, (i-1) * 28, 0, 0)
+            if colorName == "彩虹色" then
+                colorBtn.BackgroundColor3 = Color3.fromRGB(200, 100, 255)
+                local rainbowOverlay = Instance.new("TextLabel")
+                rainbowOverlay.Size = UDim2.new(1, 0, 1, 0)
+                rainbowOverlay.Text = "🌈"
+                rainbowOverlay.TextSize = 14
+                rainbowOverlay.BackgroundTransparency = 1
+                rainbowOverlay.ZIndex = 11
+                rainbowOverlay.Parent = colorBtn
+            else
+                colorBtn.BackgroundColor3 = borderColors[colorName]
+            end
             colorBtn.BorderSizePixel = 1
-            colorBtn.BorderColor3 = colorName == currentBorderColor and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+            colorBtn.BorderColor3 = (colorName == currentBorderColor or (colorName == "彩虹色" and isRainbowBorder)) and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
             colorBtn.Text = ""
             colorBtn.ZIndex = 10
             colorBtn.AutoButtonColor = false
@@ -1844,8 +2082,7 @@ local function createSettingsCard(parent, item)
             local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(1, 0); corner.Parent = colorBtn
             
             colorBtn.MouseButton1Click:Connect(function()
-                currentBorderColor = colorName
-                RGBBorder.BackgroundColor3 = borderColors[colorName]
+                setBorderColor(colorName)
                 for _, btn in ipairs(colorBtns) do
                     btn.BorderColor3 = Color3.fromRGB(200, 200, 200)
                 end
@@ -1921,22 +2158,29 @@ for _, item in ipairs(settingsItems) do
 end
 settingsPage.CanvasSize = UDim2.new(0, 0, 0, #settingsItems * 52 + 12)
 
--- 打开/关闭动画
+-- 打开/关闭动画（修复打开动画）
 contentPages["公告"].Visible = true
 local isOpen = false
 
 local function openPanel()
     isOpen = true
-    MainFrame.Size = UDim2.new(0, 0, 0, 0); MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     MainFrame.Visible = true
+    MainFrame.Size = UDim2.new(0, 0, 0, 0)
+    MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     applyPanelSize()
-    TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = MainFrame.Size, Position = MainFrame.Position}):Play()
+    -- 先设为最终大小再播放动画（修复打开动画）
+    local targetSize = MainFrame.Size
+    local targetPos = MainFrame.Position
+    MainFrame.Size = UDim2.new(0, 0, 0, 0)
+    MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = targetSize, Position = targetPos}):Play()
 end
 
 local function closePanel()
     isOpen = false
     TweenService:Create(MainFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
-    wait(0.15); MainFrame.Visible = false
+    wait(0.15)
+    MainFrame.Visible = false
 end
 
 OpenBtn.MouseButton1Click:Connect(function()
@@ -1945,4 +2189,4 @@ end)
 CloseButton.MouseButton1Click:Connect(function() closePanel() end)
 selectNav(navButtons[1].button, "公告")
 
-print("黑脚本·管理员版 已加载完成")
+print("黑脚本·管理员版 V2.0 已加载完成")
