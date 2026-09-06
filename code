@@ -1456,7 +1456,7 @@ local function getTime()
 end
 local function updateTime()
     if announcementTextBox then
-        announcementTextBox.Text = "黑脚本 V2.0 已发布\n\n对比 V1.5 新增功能：\n\n1. 全局搜索功能\n   公告页搜索框输入关键词，按空格搜索，点击结果跳转对应页面\n\n2. 彩虹边框\n   设置页可选彩虹色，主边框和灵动岛同步变色\n\n3. 手机版面板比例\n   设置页一键切换平板/手机尺寸\n\n4. 跟随玩家取消\n   按空格/跳跃键即可取消跟随\n\n5. 面板边框颜色自定义\n   设置页可选八种预设颜色\n\n6. 作者专属ESP\n   默认开启，透视玩家 CHANGCHENG66\n\n---\n\n执行次数：" .. globalExecCount .. " 次\n\n作者：CHANGCHENG66"
+        announcementTextBox.Text = "⏰ " .. getTime() .. "\n\n👤 制作者：C Studio\n📅 创建日期：2026年7月10日\n🔄 此脚本一直更新\n\n📊 您目前已经执行了 " .. globalExecCount .. " 次，感谢您的支持！\n\n🎮 玩法：开启功能后在游戏中体验效果\n如果在游玩时遇到任何问题 请报告给我们❤️\n最大帮助者:CHANGCHENG66☕\n\n感谢 hacker_lololo888的支持❤️❤️❤️❤️❤️\n开学了更新会变慢👁️\n秋辞全家死光 拍的自拍都是全家福😂"
     end
 end
 spawn(function() while true do updateTime(); wait(1) end end)
@@ -1469,7 +1469,7 @@ spawn(function()
     end
 end)
 
--- ============ 作者ESP（受设置页开关控制） ============
+-- ============ 作者ESP（受设置页开关控制，开启或关闭作者ESP） ============
 local authorEspEnabled = true
 
 local function addAuthorESP(p)
@@ -1532,7 +1532,6 @@ function disableAuthorESP()
     clearESP()
 end
 
--- 初始开启
 for _, p in ipairs(Players:GetPlayers()) do addAuthorESP(p) end
 Players.PlayerAdded:Connect(function(p) if authorEspEnabled then addAuthorESP(p) end end)
 Players.PlayerRemoving:Connect(function(p)
