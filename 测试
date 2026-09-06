@@ -1333,6 +1333,127 @@ end
     end)
 end
 -- 第3段-A2结束
+-- 主脚本 第3段-B：createFeatureToggle（后半部分：关闭逻辑）
+
+        else
+            Toggle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+            ToggleKnob:TweenPosition(UDim2.new(0, 2, 0, 2), "Out", "Quad", 0.15)
+            if runCode == "esp" then disableESP()
+            elseif runCode == "night" then Lighting.Brightness = 1; Lighting.GlobalShadows = true
+            elseif runCode == "fps" then fpsEnabled = false; FPSLabel.Visible = false
+            elseif runCode == "float" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            elseif runCode == "collect" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            elseif runCode == "clicktp" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            elseif runCode == "autoclick" then
+                if infJumpConnection then
+                    infJumpConnection:Disconnect()
+                    infJumpConnection = nil
+                end
+            elseif runCode == "speedhack" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            elseif runCode == "itemesp" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            elseif runCode == "invisible" then
+                local c = Players.LocalPlayer.Character
+                if c then for _, v in ipairs(c:GetDescendants()) do if v:IsA("BasePart") then v.Transparency = 0 end end end
+            elseif runCode == "noclip" then
+                local c = Players.LocalPlayer.Character
+                if c then for _, v in ipairs(c:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = true end end end
+            elseif runCode == "god" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            elseif runCode == "teamglow" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end; clearTeamGlow()
+            elseif runCode == "enemyglow" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end; clearEnemyGlow()
+            elseif runCode == "autoattack" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            elseif runCode == "fulllight" then Lighting.Brightness = 1; Lighting.GlobalShadows = true
+            elseif runCode == "superspeed" then
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("Humanoid") then c.Humanoid.WalkSpeed = 16 end
+            elseif runCode == "infstamina" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            elseif runCode == "infammo" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            elseif runCode == "serverinfo" then
+                if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+                local infoGui = PlayerGui:FindFirstChild("ServerInfoGui")
+                if infoGui then infoGui:Destroy() end
+            elseif runCode == "dance1" then
+                if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("Humanoid") then
+                    for _, t in ipairs(c.Humanoid:GetPlayingAnimationTracks()) do t:Stop() end
+                end
+            elseif runCode == "fire" then
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("HumanoidRootPart") then
+                    for _, v in ipairs(c.HumanoidRootPart:GetChildren()) do
+                        if v:IsA("ParticleEmitter") and v.Name == "FireFX" then v:Destroy() end
+                    end
+                end
+            elseif runCode == "glow" then
+                local c = Players.LocalPlayer.Character
+                if c then local hl = c:FindFirstChild("PlayerGlow"); if hl then hl:Destroy() end end
+            elseif runCode == "upsidedown" then
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("HumanoidRootPart") then
+                    c.HumanoidRootPart.CFrame = c.HumanoidRootPart.CFrame * CFrame.Angles(0, 0, math.rad(180))
+                end
+            elseif runCode == "bighead" then
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("Head") then c.Head.Size = Vector3.new(2, 1, 1) end
+            elseif runCode == "screenfx" then
+                local fx = Lighting:FindFirstChild("ScreenFX"); if fx then fx:Destroy() end
+            elseif runCode == "trail" then
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("HumanoidRootPart") then
+                    local trail = c.HumanoidRootPart:FindFirstChild("PlayerTrail")
+                    if trail then trail:Destroy() end
+                    local a0 = c.HumanoidRootPart:FindFirstChild("TrailAttachment0")
+                    if a0 then a0:Destroy() end
+                    local a1 = c.HumanoidRootPart:FindFirstChild("TrailAttachment1")
+                    if a1 then a1:Destroy() end
+                end
+            elseif runCode == "firetrail" then
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("HumanoidRootPart") then
+                    local trail = c.HumanoidRootPart:FindFirstChild("FireTrail")
+                    if trail then trail:Destroy() end
+                    local a0 = c.HumanoidRootPart:FindFirstChild("FireTrailA0")
+                    if a0 then a0:Destroy() end
+                    local a1 = c.HumanoidRootPart:FindFirstChild("FireTrailA1")
+                    if a1 then a1:Destroy() end
+                end
+            elseif runCode == "iceTrail" then
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("HumanoidRootPart") then
+                    local trail = c.HumanoidRootPart:FindFirstChild("IceTrail")
+                    if trail then trail:Destroy() end
+                    local a0 = c.HumanoidRootPart:FindFirstChild("IceTrailA0")
+                    if a0 then a0:Destroy() end
+                    local a1 = c.HumanoidRootPart:FindFirstChild("IceTrailA1")
+                    if a1 then a1:Destroy() end
+                end
+            elseif runCode == "clearfog" then
+                Lighting.FogEnd = 1000; Lighting.FogStart = 0
+            elseif runCode == "subtitle" then
+                if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+                local subGui = PlayerGui:FindFirstChild("SubtitleGui")
+                if subGui then subGui:Destroy() end
+            elseif runCode == "rainbowname" then
+                if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("Head") then
+                    local bb = c.Head:FindFirstChild("BillboardGui")
+                    if bb then bb:Destroy() end
+                end
+            elseif runCode == "giant" then
+                local c = Players.LocalPlayer.Character
+                if c then
+                    for _, v in ipairs(c:GetDescendants()) do
+                        if v:IsA("BasePart") then v.Size = v.Size / 3 end
+                    end
+                end
+            elseif runCode == "deletepart" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            elseif runCode == "infjump" then infJumpEnabled = false; if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            end
+        end
+    end)
+end
+-- 第3段-B结束
 -- 主脚本 第4段：createInputCard + createMusicCard
 
 local function createInputCard(parent, name, description, icon, defaultValue, onExecute)
