@@ -200,17 +200,14 @@ BarCorner.Parent = Bar
 local RGBOutline = Instance.new("Frame")
 RGBOutline.Size = UDim2.new(1, 3, 1, 3)
 RGBOutline.Position = UDim2.new(0, -1.5, 0, -1.5)
-RGBOutline.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+RGBOutline.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
 RGBOutline.ZIndex = 19
 RGBOutline.Parent = Bar
 local RGBOutlineCorner = Instance.new("UICorner")
 RGBOutlineCorner.CornerRadius = UDim.new(0, 15)
 RGBOutlineCorner.Parent = RGBOutline
-local barHue = 0
-RunService.RenderStepped:Connect(function(delta)
-    barHue = (barHue + delta * 0.3) % 1
-    RGBOutline.BackgroundColor3 = Color3.fromHSV(barHue, 0.7, 1)
-end)
+
+-- 灵动岛颜色由 setBorderColor 统一控制，初始金色
 local DragBtn = Instance.new("TextButton")
 DragBtn.Size = UDim2.new(0, 60, 1, 0)
 DragBtn.Position = UDim2.new(0, 0, 0, 0)
@@ -343,6 +340,7 @@ local RGBBorderCorner = Instance.new("UICorner")
 RGBBorderCorner.CornerRadius = UDim.new(0, 16)
 RGBBorderCorner.Parent = RGBBorder
 
+-- 边框颜色预设（含彩虹色）
 local borderColors = {
     ["金色"] = Color3.fromRGB(255, 215, 0),
     ["红色"] = Color3.fromRGB(255, 0, 0),
@@ -352,12 +350,13 @@ local borderColors = {
     ["粉色"] = Color3.fromRGB(255, 100, 200),
     ["青色"] = Color3.fromRGB(0, 255, 255),
     ["白色"] = Color3.fromRGB(255, 255, 255),
-    ["彩虹色"] = nil,  -- 特殊处理
+    ["彩虹色"] = nil,
 }
 local currentBorderColor = "金色"
 local isRainbowBorder = false
 local borderRainbowConn = nil
 
+-- ===== 统一设置边框颜色（同时修改主边框 + 灵动岛） =====
 local function setBorderColor(colorName)
     currentBorderColor = colorName
     if borderRainbowConn then borderRainbowConn:Disconnect(); borderRainbowConn = nil end
@@ -366,15 +365,19 @@ local function setBorderColor(colorName)
         local h = 0
         borderRainbowConn = RunService.RenderStepped:Connect(function(delta)
             h = (h + delta * 0.4) % 1
-            RGBBorder.BackgroundColor3 = Color3.fromHSV(h, 0.8, 1)
-            -- 同步灵动岛（顶部栏边框）
-            RGBOutline.BackgroundColor3 = Color3.fromHSV(h, 0.8, 1)
+            local c = Color3.fromHSV(h, 0.8, 1)
+            RGBBorder.BackgroundColor3 = c
+            RGBOutline.BackgroundColor3 = c
         end)
     else
-        RGBBorder.BackgroundColor3 = borderColors[colorName]
-        RGBOutline.BackgroundColor3 = borderColors[colorName]
+        local c = borderColors[colorName]
+        RGBBorder.BackgroundColor3 = c
+        RGBOutline.BackgroundColor3 = c
     end
 end
+
+-- 初始设为金色
+setBorderColor("金色")
 
 local InnerPanel = Instance.new("Frame")
 InnerPanel.Size = UDim2.new(1, -6, 1, -6)
@@ -393,20 +396,19 @@ local function applyPanelSize()
     if panelMode == "平板" then
         MainFrame.Size = UDim2.new(0, 580, 0, 440)
         MainFrame.Position = UDim2.new(0.5, -290, 0.5, -220)
-        -- 灵动岛（顶部栏边框）大小不变
         RGBOutline.Size = UDim2.new(1, 5, 1, 5)
-    else  -- 手机模式 350x480
-        MainFrame.Size = UDim2.new(0, 350, 0, 480)
-        MainFrame.Position = UDim2.new(0.5, -175, 0.5, -240)
-        -- 灵动岛缩小
+    else  -- 手机模式 500x480
+        MainFrame.Size = UDim2.new(0, 500, 0, 480)
+        MainFrame.Position = UDim2.new(0.5, -250, 0.5, -240)
         RGBOutline.Size = UDim2.new(1, 3, 1, 3)
     end
     -- 重新应用边框颜色
     if isRainbowBorder then
         -- 保持彩虹
     else
-        RGBBorder.BackgroundColor3 = borderColors[currentBorderColor] or Color3.fromRGB(255, 215, 0)
-        RGBOutline.BackgroundColor3 = borderColors[currentBorderColor] or Color3.fromRGB(255, 215, 0)
+        local c = borderColors[currentBorderColor] or Color3.fromRGB(255, 215, 0)
+        RGBBorder.BackgroundColor3 = c
+        RGBOutline.BackgroundColor3 = c
     end
 end
 
@@ -1332,8 +1334,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
             end
         end
     end)
-end
--- 主脚本 第5段：createInputCard + createMusicCard + 公告 + 搜索框 + homePosition + 作者ESP
+end-- 主脚本 第5段：createInputCard + createMusicCard + 公告 + 搜索框 + homePosition + 作者ESP
 
 local function createInputCard(parent, name, description, icon, defaultValue, onExecute)
     local Card = Instance.new("Frame")
@@ -1825,10 +1826,10 @@ for pageName, contentData in pairs(pageContents) do
         searchIcon.ZIndex = 9
         searchIcon.Parent = searchFrame
         
-        searchBox = Instance.new("TextBox")
+        local searchBox = Instance.new("TextBox")
         searchBox.Size = UDim2.new(1, -34, 1, 0)
         searchBox.Position = UDim2.new(0, 34, 0, 0)
-        searchBox.PlaceholderText = "搜索功能..."
+        searchBox.PlaceholderText = "搜索功能... (按空格搜索)"
         searchBox.Text = ""
         searchBox.TextColor3 = Color3.fromRGB(50, 50, 50)
         searchBox.Font = Enum.Font.Gotham
@@ -1836,22 +1837,8 @@ for pageName, contentData in pairs(pageContents) do
         searchBox.BackgroundTransparency = 1
         searchBox.ZIndex = 9
         searchBox.Parent = searchFrame
-        searchBox.Changed:Connect(function(prop)
-            if prop == "Text" then
-                updateSearchResults(searchBox.Text)
-            end
-        end)
         
-        -- 搜索结果容器
-        searchResultContainer = Instance.new("Frame")
-        searchResultContainer.Size = UDim2.new(1, -16, 0, 0)
-        searchResultContainer.Position = UDim2.new(0, 8, 0, 48)
-        searchResultContainer.BackgroundTransparency = 1
-        searchResultContainer.ClipsDescendants = true
-        searchResultContainer.ZIndex = 8
-        searchResultContainer.Parent = Page
-        
-        -- 公告文本
+        -- 公告文本（放在搜索框下方）
         announcementTextBox = Instance.new("TextLabel")
         announcementTextBox.Size = UDim2.new(1, -20, 0, 440)
         announcementTextBox.Position = UDim2.new(0, 10, 0, 48)
@@ -1868,18 +1855,32 @@ for pageName, contentData in pairs(pageContents) do
         Page.CanvasSize = UDim2.new(0, 0, 0, 500)
         updateTime()
         
-        local function updateSearchResults(query)
-            if not searchResultContainer then return end
-            -- 清空旧结果
-            for _, child in ipairs(searchResultContainer:GetChildren()) do
-                child:Destroy()
-            end
+        -- 搜索结果容器（右侧面板）
+        local searchResultContainer = Instance.new("Frame")
+        searchResultContainer.Size = UDim2.new(1, -16, 0, 0)
+        searchResultContainer.Position = UDim2.new(0, 8, 0, 48)
+        searchResultContainer.BackgroundTransparency = 1
+        searchResultContainer.ClipsDescendants = true
+        searchResultContainer.ZIndex = 8
+        searchResultContainer.Visible = false
+        searchResultContainer.Parent = Page
+        
+        -- 搜索函数
+        local function doSearch(query)
             if query == "" or #query < 1 then
+                searchResultContainer.Visible = false
                 searchResultContainer.Size = UDim2.new(1, -16, 0, 0)
                 announcementTextBox.Visible = true
                 return
             end
             announcementTextBox.Visible = false
+            searchResultContainer.Visible = true
+            
+            -- 清空旧结果
+            for _, child in ipairs(searchResultContainer:GetChildren()) do
+                child:Destroy()
+            end
+            
             local results = {}
             local lowerQuery = query:lower()
             for _, item in ipairs(allFunctionItems) do
@@ -1887,6 +1888,7 @@ for pageName, contentData in pairs(pageContents) do
                     table.insert(results, item)
                 end
             end
+            
             if #results == 0 then
                 local noResult = Instance.new("TextLabel")
                 noResult.Size = UDim2.new(1, 0, 0, 40)
@@ -1900,8 +1902,10 @@ for pageName, contentData in pairs(pageContents) do
                 searchResultContainer.Size = UDim2.new(1, -16, 0, 40)
                 return
             end
+            
             local totalHeight = #results * 48 + 10
             searchResultContainer.Size = UDim2.new(1, -16, 0, totalHeight)
+            
             for _, item in ipairs(results) do
                 local resultCard = Instance.new("Frame")
                 resultCard.Size = UDim2.new(1, 0, 0, 44)
@@ -1965,19 +1969,34 @@ for pageName, contentData in pairs(pageContents) do
                 goCorner.CornerRadius = UDim.new(0, 5)
                 goCorner.Parent = goBtn
                 goBtn.MouseButton1Click:Connect(function()
-                    -- 切换到对应页面
                     for _, nav in ipairs(navButtons) do
                         if nav.name == item.page then
                             selectNav(nav.button, item.page)
                             searchBox.Text = ""
-                            announcementTextBox.Visible = true
+                            searchResultContainer.Visible = false
                             searchResultContainer.Size = UDim2.new(1, -16, 0, 0)
+                            announcementTextBox.Visible = true
                             break
                         end
                     end
                 end)
             end
         end
+        
+        -- 按空格触发搜索
+        searchBox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then
+                doSearch(searchBox.Text)
+            end
+        end)
+        -- 也监听键盘事件
+        local searchConn
+        searchConn = UserInputService.InputBegan:Connect(function(input, gp)
+            if gp then return end
+            if input.KeyCode == Enum.KeyCode.Space and searchBox:IsFocused() then
+                doSearch(searchBox.Text)
+            end
+        end)
         
     elseif contentData.type == "toggles" then
         local n = 0
@@ -2014,11 +2033,10 @@ local settingsList = Instance.new("UIListLayout"); settingsList.Padding = UDim.n
 local settingsSpacer = Instance.new("Frame"); settingsSpacer.Size = UDim2.new(1, 0, 0, 6); settingsSpacer.BackgroundTransparency = 1; settingsSpacer.Parent = settingsPage
 contentPages["设置"] = settingsPage
 
--- 设置项（包含彩虹色）
+-- 设置项（只有边框颜色 + 面板比例，删掉FPS）
 local settingsItems = {
     {type = "color", name = "边框颜色", desc = "切换面板边框颜色（含彩虹）", icon = "🎨", colors = {"金色", "红色", "蓝色", "绿色", "紫色", "粉色", "青色", "白色", "彩虹色"}},
     {type = "size", name = "面板比例", desc = "切换平板/手机尺寸", icon = "📱", modes = {"平板", "手机"}},
-    {type = "toggle", name = "显示FPS", desc = "左上角实时帧率", icon = "📊", code = "fps"},
 }
 
 local function createSettingsCard(parent, item)
@@ -2131,25 +2149,6 @@ local function createSettingsCard(parent, item)
                 end
             end)
         end
-        
-    elseif item.type == "toggle" then
-        local Toggle = Instance.new("TextButton")
-        Toggle.Size = UDim2.new(0, 36, 0, 20); Toggle.Position = UDim2.new(1, -46, 0, 13)
-        Toggle.BackgroundColor3 = fpsEnabled and Color3.fromRGB(255, 140, 0) or Color3.fromRGB(200, 200, 200)
-        Toggle.Text = ""; Toggle.BorderSizePixel = 0; Toggle.ZIndex = 8; Toggle.AutoButtonColor = false; Toggle.Parent = Card
-        local ToggleCorner = Instance.new("UICorner"); ToggleCorner.CornerRadius = UDim.new(1, 0); ToggleCorner.Parent = Toggle
-        local ToggleKnob = Instance.new("Frame")
-        ToggleKnob.Size = UDim2.new(0, 16, 0, 16)
-        ToggleKnob.Position = fpsEnabled and UDim2.new(1, -18, 0, 2) or UDim2.new(0, 2, 0, 2)
-        ToggleKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255); ToggleKnob.BorderSizePixel = 0; ToggleKnob.ZIndex = 9; ToggleKnob.Parent = Toggle
-        local KnobCorner = Instance.new("UICorner"); KnobCorner.CornerRadius = UDim.new(1, 0); KnobCorner.Parent = ToggleKnob
-        
-        Toggle.MouseButton1Click:Connect(function()
-            fpsEnabled = not fpsEnabled
-            FPSLabel.Visible = fpsEnabled
-            Toggle.BackgroundColor3 = fpsEnabled and Color3.fromRGB(255, 140, 0) or Color3.fromRGB(200, 200, 200)
-            ToggleKnob:TweenPosition(fpsEnabled and UDim2.new(1, -18, 0, 2) or UDim2.new(0, 2, 0, 2), "Out", "Quad", 0.15)
-        end)
     end
 end
 
@@ -2158,7 +2157,7 @@ for _, item in ipairs(settingsItems) do
 end
 settingsPage.CanvasSize = UDim2.new(0, 0, 0, #settingsItems * 52 + 12)
 
--- 打开/关闭动画（修复打开动画）
+-- 打开/关闭动画
 contentPages["公告"].Visible = true
 local isOpen = false
 
@@ -2168,7 +2167,6 @@ local function openPanel()
     MainFrame.Size = UDim2.new(0, 0, 0, 0)
     MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     applyPanelSize()
-    -- 先设为最终大小再播放动画（修复打开动画）
     local targetSize = MainFrame.Size
     local targetPos = MainFrame.Position
     MainFrame.Size = UDim2.new(0, 0, 0, 0)
