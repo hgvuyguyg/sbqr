@@ -1,4 +1,4 @@
--- 主脚本 第1段：UI初始化 + 音频 + 欢迎文字 + 顶部拖拽栏 + FPS显示 + ESP + 主窗口框架 + 导航
+-- 主脚本 第1段：UI初始化 + 音频 + 欢迎文字 + 顶部拖拽栏 + FPS显示 + 主窗口框架 + 导航
 
 local Players = game:GetService("Players")
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -200,17 +200,13 @@ BarCorner.Parent = Bar
 local RGBOutline = Instance.new("Frame")
 RGBOutline.Size = UDim2.new(1, 3, 1, 3)
 RGBOutline.Position = UDim2.new(0, -1.5, 0, -1.5)
-RGBOutline.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+RGBOutline.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
 RGBOutline.ZIndex = 19
 RGBOutline.Parent = Bar
 local RGBOutlineCorner = Instance.new("UICorner")
 RGBOutlineCorner.CornerRadius = UDim.new(0, 15)
 RGBOutlineCorner.Parent = RGBOutline
-local barHue = 0
-RunService.RenderStepped:Connect(function(delta)
-    barHue = (barHue + delta * 0.3) % 1
-    RGBOutline.BackgroundColor3 = Color3.fromHSV(barHue, 0.7, 1)
-end)
+
 local DragBtn = Instance.new("TextButton")
 DragBtn.Size = UDim2.new(0, 60, 1, 0)
 DragBtn.Position = UDim2.new(0, 0, 0, 0)
@@ -274,10 +270,10 @@ FPSLabel.Font = Enum.Font.GothamBold
 FPSLabel.TextSize = 16
 FPSLabel.TextXAlignment = Enum.TextXAlignment.Left
 FPSLabel.ZIndex = 100
-FPSLabel.Visible = false
+FPSLabel.Visible = true
 FPSLabel.RichText = true
 FPSLabel.Parent = ScreenGui
-local fpsEnabled = false
+local fpsEnabled = true
 local lastFrameTime = tick()
 local frameCount = 0
 local currentFPS = 0
@@ -293,63 +289,35 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
 local espEnabled = false
 local espHighlights = {}
 local espBillboards = {}
 local teamGlowHighlights = {}
 local enemyGlowHighlights = {}
+
 local function clearESP()
     for _, h in pairs(espHighlights) do pcall(function() h:Destroy() end) end
     for _, b in pairs(espBillboards) do pcall(function() b:Destroy() end) end
     espHighlights = {}; espBillboards = {}
 end
+
 local function clearTeamGlow()
     for _, h in pairs(teamGlowHighlights) do pcall(function() h:Destroy() end) end
     teamGlowHighlights = {}
 end
+
 local function clearEnemyGlow()
     for _, h in pairs(enemyGlowHighlights) do pcall(function() h:Destroy() end) end
     enemyGlowHighlights = {}
 end
-local function addESP(p)
-    if p == Players.LocalPlayer then return end
-    local function s(c)
-        if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end) end
-        if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end) end
-        local hl = Instance.new("Highlight")
-        hl.FillColor = Color3.fromRGB(255, 0, 0); hl.FillTransparency = 0.5
-        hl.OutlineColor = Color3.fromRGB(255, 0, 0); hl.OutlineTransparency = 0
-        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        hl.Adornee = c; hl.Parent = c; espHighlights[p] = hl
-        local h = c:FindFirstChild("Head")
-        if h then
-            local bb = Instance.new("BillboardGui")
-            bb.Size = UDim2.new(0, 100, 0, 30); bb.StudsOffset = Vector3.new(0, 3, 0)
-            bb.AlwaysOnTop = true; bb.Parent = h
-            local nl = Instance.new("TextLabel")
-            nl.Size = UDim2.new(1, 0, 1, 0); nl.BackgroundTransparency = 1
-            nl.Text = p.Name; nl.TextColor3 = Color3.fromRGB(255, 255, 255)
-            nl.Font = Enum.Font.GothamBold; nl.TextSize = 14
-            nl.TextStrokeTransparency = 0; nl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-            nl.Parent = bb; espBillboards[p] = bb
-        end
-    end
-    if p.Character then s(p.Character) end
-    p.CharacterAdded:Connect(function(c) if espEnabled then s(c) end end)
-end
-local function enableESP()
-    espEnabled = true
-    for _, p in ipairs(Players:GetPlayers()) do addESP(p) end
-    Players.PlayerAdded:Connect(function(p) if espEnabled then addESP(p) end end)
-    Players.PlayerRemoving:Connect(function(p)
-        if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end); espHighlights[p] = nil end
-        if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end); espBillboards[p] = nil end
-    end)
-end
-local function disableESP() espEnabled = false; clearESP() end
+
 local infJumpEnabled = false
-local infJumpConnection
+local infJumpConnection = nil
 local spinConnection = nil
+local followConnection = nil
+local followActive = false
+
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 580, 0, 440)
 MainFrame.Position = UDim2.new(0.5, -290, 0.5, -220)
@@ -364,16 +332,50 @@ MainCorner.Parent = MainFrame
 local RGBBorder = Instance.new("Frame")
 RGBBorder.Size = UDim2.new(1, 5, 1, 5)
 RGBBorder.Position = UDim2.new(0, -2.5, 0, -2.5)
-RGBBorder.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+RGBBorder.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
 RGBBorder.ZIndex = 1
 RGBBorder.Parent = MainFrame
 local RGBBorderCorner = Instance.new("UICorner")
 RGBBorderCorner.CornerRadius = UDim.new(0, 16)
 RGBBorderCorner.Parent = RGBBorder
-local hue = 0
-RunService.RenderStepped:Connect(function(delta)
-    if MainFrame.Visible then hue = (hue + delta * 0.3) % 1; RGBBorder.BackgroundColor3 = Color3.fromHSV(hue, 0.7, 1) end
-end)
+
+local borderColors = {
+    ["金色"] = Color3.fromRGB(255, 215, 0),
+    ["红色"] = Color3.fromRGB(255, 0, 0),
+    ["蓝色"] = Color3.fromRGB(0, 150, 255),
+    ["绿色"] = Color3.fromRGB(0, 255, 100),
+    ["紫色"] = Color3.fromRGB(200, 0, 255),
+    ["粉色"] = Color3.fromRGB(255, 100, 200),
+    ["青色"] = Color3.fromRGB(0, 255, 255),
+    ["白色"] = Color3.fromRGB(255, 255, 255),
+}
+local currentBorderColor = "金色"
+local isRainbowBorder = false
+local borderRainbowConn = nil
+
+local function setBorderColor(colorName)
+    if colorName == "彩虹色" then
+        isRainbowBorder = true
+        if borderRainbowConn then borderRainbowConn:Disconnect() end
+        local h = 0
+        borderRainbowConn = RunService.RenderStepped:Connect(function(delta)
+            h = (h + delta * 0.4) % 1
+            local c = Color3.fromHSV(h, 0.8, 1)
+            RGBBorder.BackgroundColor3 = c
+            RGBOutline.BackgroundColor3 = c
+        end)
+    else
+        isRainbowBorder = false
+        if borderRainbowConn then borderRainbowConn:Disconnect(); borderRainbowConn = nil end
+        currentBorderColor = colorName
+        local c = borderColors[colorName]
+        RGBBorder.BackgroundColor3 = c
+        RGBOutline.BackgroundColor3 = c
+    end
+end
+
+setBorderColor("金色")
+
 local InnerPanel = Instance.new("Frame")
 InnerPanel.Size = UDim2.new(1, -6, 1, -6)
 InnerPanel.Position = UDim2.new(0, 3, 0, 3)
@@ -384,6 +386,27 @@ InnerPanel.Parent = MainFrame
 local InnerCorner = Instance.new("UICorner")
 InnerCorner.CornerRadius = UDim.new(0, 12)
 InnerCorner.Parent = InnerPanel
+
+local panelMode = "平板"
+
+local function applyPanelSize()
+    if panelMode == "平板" then
+        MainFrame.Size = UDim2.new(0, 580, 0, 440)
+        MainFrame.Position = UDim2.new(0.5, -290, 0.5, -220)
+        RGBOutline.Size = UDim2.new(1, 5, 1, 5)
+    else
+        MainFrame.Size = UDim2.new(0, 500, 0, 400)
+        MainFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
+        RGBOutline.Size = UDim2.new(1, 3, 1, 3)
+    end
+    if isRainbowBorder then
+    else
+        local c = borderColors[currentBorderColor] or Color3.fromRGB(255, 215, 0)
+        RGBBorder.BackgroundColor3 = c
+        RGBOutline.BackgroundColor3 = c
+    end
+end
+
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1, 0, 0, 36)
 TopBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -432,7 +455,7 @@ RunService.RenderStepped:Connect(function(delta)
 end)
 local InfoLabel = Instance.new("TextLabel")
 InfoLabel.Size = UDim2.new(1, 0, 1, 0)
-InfoLabel.Text = "黑脚本 V1.5"
+InfoLabel.Text = "黑脚本 V2.0"
 InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 InfoLabel.Font = Enum.Font.GothamBold
 InfoLabel.TextSize = 10
@@ -442,12 +465,11 @@ InfoLabel.Parent = InfoBox
 spawn(function()
     while true do
         local now = os.date("*t")
-        InfoLabel.Text = "黑脚本 V1.5 | " .. now.month .. "月" .. now.day .. "日 " .. string.format("%02d:%02d:%02d", now.hour, now.min, now.sec)
+        InfoLabel.Text = "黑脚本 V2.0 | " .. now.month .. "月" .. now.day .. "日 " .. string.format("%02d:%02d:%02d", now.hour, now.min, now.sec)
         wait(1)
     end
 end)
 
--- 管理员版本标签（金色带彩虹描边）
 local AdminBadge = Instance.new("Frame")
 AdminBadge.Size = UDim2.new(0, 85, 0, 30)
 AdminBadge.Position = UDim2.new(0, 359, 0, 3)
@@ -458,7 +480,6 @@ AdminBadge.Parent = TopBar
 local AdminCorner = Instance.new("UICorner")
 AdminCorner.CornerRadius = UDim.new(0, 6)
 AdminCorner.Parent = AdminBadge
-
 local AdminRGBOutline = Instance.new("Frame")
 AdminRGBOutline.Size = UDim2.new(1, 3, 1, 3)
 AdminRGBOutline.Position = UDim2.new(0, -1.5, 0, -1.5)
@@ -468,13 +489,11 @@ AdminRGBOutline.Parent = AdminBadge
 local AdminRGBCorner = Instance.new("UICorner")
 AdminRGBCorner.CornerRadius = UDim.new(0, 8)
 AdminRGBCorner.Parent = AdminRGBOutline
-
 local adminHue = 0
 RunService.RenderStepped:Connect(function(delta)
     adminHue = (adminHue + delta * 0.4) % 1
     AdminRGBOutline.BackgroundColor3 = Color3.fromHSV(adminHue, 0.8, 1)
 end)
-
 local AdminText = Instance.new("TextLabel")
 AdminText.Size = UDim2.new(1, 0, 1, 0)
 AdminText.Text = "👑 管理员版本"
@@ -597,7 +616,7 @@ local NavTopPad = Instance.new("Frame")
 NavTopPad.Size = UDim2.new(1, 0, 0, 5)
 NavTopPad.BackgroundTransparency = 1
 NavTopPad.Parent = NavScroll
-local navItems = {{name = "公告", icon = "📢"},{name = "通用", icon = "⚙️"},{name = "战斗功能", icon = "⚔️"},{name = "整活功能", icon = "🎭"},{name = "音乐区", icon = "🎵"},{name = "甩飞", icon = "💨"},{name = "服务器", icon = "📡"},{name = "国内脚本", icon = "🇨🇳"}}
+local navItems = {{name = "公告", icon = "📢"},{name = "通用", icon = "⚙️"},{name = "战斗功能", icon = "⚔️"},{name = "整活功能", icon = "🎭"},{name = "音乐区", icon = "🎵"},{name = "甩飞", icon = "💨"},{name = "服务器", icon = "📡"},{name = "国内脚本", icon = "🇨🇳"},{name = "设置", icon = "⚙️"}}
 local navButtons = {}
 local selectedNav = nil
 local ContentArea = Instance.new("Frame")
@@ -636,7 +655,7 @@ for _, item in ipairs(navItems) do
     NavButton.MouseLeave:Connect(function() if NavButton ~= selectedNav then NavButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255) end end)
     table.insert(navButtons, {button = NavButton, name = item.name})
 end
--- 主脚本 第2段：createButtonCard + createFeatureToggle 前半
+-- 主脚本 第2段：createButtonCard 函数
 
 local function createButtonCard(parent, name, desc, icon, url)
     local Card = Instance.new("Frame")
@@ -714,10 +733,38 @@ local function createButtonCard(parent, name, desc, icon, url)
                     local pCorner = Instance.new("UICorner"); pCorner.CornerRadius = UDim.new(0, 5); pCorner.Parent = pbtn
                     pbtn.MouseButton1Click:Connect(function()
                         if url == "follow" then
-                            infJumpConnection = RunService.RenderStepped:Connect(function()
-                                local c = Players.LocalPlayer.Character; local tc = plr.Character
+                            followActive = true
+                            if followConnection then followConnection:Disconnect() end
+                            followConnection = RunService.RenderStepped:Connect(function()
+                                if not followActive then
+                                    followConnection:Disconnect()
+                                    followConnection = nil
+                                    return
+                                end
+                                local c = Players.LocalPlayer.Character
+                                local tc = plr.Character
                                 if c and c:FindFirstChild("HumanoidRootPart") and tc and tc:FindFirstChild("HumanoidRootPart") then
                                     c.HumanoidRootPart.CFrame = tc.HumanoidRootPart.CFrame + Vector3.new(3, 0, 0)
+                                end
+                            end)
+                            local jumpConn
+                            jumpConn = UserInputService.JumpRequest:Connect(function()
+                                if followActive then
+                                    followActive = false
+                                    if followConnection then followConnection:Disconnect(); followConnection = nil end
+                                    if jumpConn then jumpConn:Disconnect() end
+                                end
+                            end)
+                            local keyConn
+                            keyConn = UserInputService.InputBegan:Connect(function(input, gp)
+                                if gp then return end
+                                if input.KeyCode == Enum.KeyCode.Space then
+                                    if followActive then
+                                        followActive = false
+                                        if followConnection then followConnection:Disconnect(); followConnection = nil end
+                                        if keyConn then keyConn:Disconnect() end
+                                        if jumpConn then jumpConn:Disconnect() end
+                                    end
                                 end
                             end)
                         else
@@ -747,6 +794,7 @@ local function createButtonCard(parent, name, desc, icon, url)
         Btn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
     end)
 end
+-- 主脚本 第3段：createFeatureToggle 前半
 
 local function createFeatureToggle(parent, name, description, icon, runCode)
     local Card = Instance.new("Frame")
@@ -781,6 +829,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
     ToggleKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255); ToggleKnob.BorderSizePixel = 0; ToggleKnob.ZIndex = 9; ToggleKnob.Parent = Toggle
     local KnobCorner = Instance.new("UICorner"); KnobCorner.CornerRadius = UDim.new(1, 0); KnobCorner.Parent = ToggleKnob
     local toggleState = false
+    local toggleConn = nil
     Toggle.MouseButton1Click:Connect(function()
         toggleState = not toggleState
         if toggleState then
@@ -793,7 +842,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("HumanoidRootPart") then
                     local hrp = c.HumanoidRootPart; local floatY = hrp.Position.Y
-                    infJumpConnection = RunService.RenderStepped:Connect(function()
+                    toggleConn = RunService.RenderStepped:Connect(function()
                         if hrp and hrp.Parent then hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z); hrp.CFrame = CFrame.new(hrp.Position.X, floatY, hrp.Position.Z) end
                     end)
                 end
@@ -802,7 +851,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("HumanoidRootPart") then
                     local hrp = c.HumanoidRootPart
-                    infJumpConnection = RunService.RenderStepped:Connect(function()
+                    toggleConn = RunService.RenderStepped:Connect(function()
                         for _, item in ipairs(workspace:GetDescendants()) do
                             if item:IsA("Tool") or item:IsA("MeshPart") or (item:IsA("Part") and (item.Name:lower():find("drop") or item.Name:lower():find("coin") or item.Name:lower():find("gem") or item.Name:lower():find("collect") or item.Name:lower():find("orb"))) then
                                 if (item.Position - hrp.Position).Magnitude < 80 then
@@ -814,7 +863,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 end
             elseif runCode == "clicktp" then
                 local mouse = Players.LocalPlayer:GetMouse()
-                infJumpConnection = mouse.Button1Down:Connect(function()
+                toggleConn = mouse.Button1Down:Connect(function()
                     local c = Players.LocalPlayer.Character
                     if c and c:FindFirstChild("HumanoidRootPart") and mouse.Hit then
                         c.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.p + Vector3.new(0, 3, 0))
@@ -822,15 +871,15 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 end)
             elseif runCode == "autoclick" then
                 local vu = game:GetService("VirtualUser"); local camera = workspace.CurrentCamera
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     local s = camera.ViewportSize; vu:Button1Down(Vector2.new(s.X/2, s.Y/2)); wait(0.05); vu:Button1Up(Vector2.new(s.X/2, s.Y/2))
                 end)
             elseif runCode == "speedhack" then
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     for _, v in ipairs(workspace:GetDescendants()) do if v:IsA("Animation") then v.Speed = 2 end end
                 end)
             elseif runCode == "itemesp" then
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     for _, item in ipairs(workspace:GetDescendants()) do
                         if (item:IsA("Tool") or item.Name:find("Drop")) and not item:FindFirstChild("ItemESP") then
                             local hl = Instance.new("Highlight"); hl.Name = "ItemESP"
@@ -848,16 +897,16 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("Humanoid") then
                     c.Humanoid.MaxHealth = 99999; c.Humanoid.Health = 99999
-                    infJumpConnection = RunService.RenderStepped:Connect(function()
+                    toggleConn = RunService.RenderStepped:Connect(function()
                         if c and c:FindFirstChild("Humanoid") then c.Humanoid.Health = 99999 end
                     end)
                 end
--- 主脚本 第3段：createFeatureToggle 后半（从 teamglow 到结尾）
+-- 主脚本 第4段：createFeatureToggle 后半
 
             elseif runCode == "teamglow" then
                 local myTeam = Players.LocalPlayer.Team
                 clearTeamGlow()
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     for _, p in ipairs(Players:GetPlayers()) do
                         if p ~= Players.LocalPlayer and p.Character and p.Team == myTeam then
                             if not teamGlowHighlights[p] then
@@ -871,7 +920,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
             elseif runCode == "enemyglow" then
                 local myTeam = Players.LocalPlayer.Team
                 clearEnemyGlow()
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     for _, p in ipairs(Players:GetPlayers()) do
                         if p ~= Players.LocalPlayer and p.Character and p.Team ~= myTeam then
                             if not enemyGlowHighlights[p] then
@@ -883,7 +932,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                     end
                 end)
             elseif runCode == "autoattack" then
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     local c = Players.LocalPlayer.Character; if not c then return end
                     local nearest = nil; local minDist = 15; local myTeam = Players.LocalPlayer.Team
                     for _, p in ipairs(Players:GetPlayers()) do
@@ -907,24 +956,18 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 if c and c:FindFirstChild("Humanoid") then c.Humanoid.Health = 0 end
             elseif runCode == "superspeed" then
                 local c = Players.LocalPlayer.Character
-                if c and c:FindFirstChild("Humanoid") then
-                    c.Humanoid.WalkSpeed = 1000
-                end
+                if c and c:FindFirstChild("Humanoid") then c.Humanoid.WalkSpeed = 1000 end
             elseif runCode == "infstamina" then
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     local c = Players.LocalPlayer.Character
-                    if c and c:FindFirstChild("Humanoid") then
-                        c.Humanoid.MaxHealth = c.Humanoid.MaxHealth
-                    end
+                    if c and c:FindFirstChild("Humanoid") then c.Humanoid.MaxHealth = c.Humanoid.MaxHealth end
                 end)
             elseif runCode == "infammo" then
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     local c = Players.LocalPlayer.Character
                     if c then
                         for _, tool in ipairs(c:GetChildren()) do
-                            if tool:IsA("Tool") and tool:FindFirstChild("Ammo") then
-                                tool.Ammo.Value = 999
-                            end
+                            if tool:IsA("Tool") and tool:FindFirstChild("Ammo") then tool.Ammo.Value = 999 end
                         end
                     end
                 end)
@@ -995,14 +1038,14 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                     end
                     nearestLabel.Text = nearestText
                 end)
-                infJumpConnection = {Disconnect = function() infoActive = false; if infoGui then infoGui:Destroy() end; if renderConn then renderConn:Disconnect() end end}
+                toggleConn = {Disconnect = function() infoActive = false; if infoGui then infoGui:Destroy() end; if renderConn then renderConn:Disconnect() end end}
             elseif runCode == "dance1" then
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("Humanoid") then
                     local danceActive = true
                     local anim = Instance.new("Animation"); anim.AnimationId = "rbxassetid://5918726674"
                     local track = c.Humanoid:LoadAnimation(anim); track:Play()
-                    infJumpConnection = {Disconnect = function() danceActive = false; if track then track:Stop() end end}
+                    toggleConn = {Disconnect = function() danceActive = false; if track then track:Stop() end end}
                 end
             elseif runCode == "fire" then
                 local c = Players.LocalPlayer.Character
@@ -1024,9 +1067,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 end
             elseif runCode == "bighead" then
                 local c = Players.LocalPlayer.Character
-                if c and c:FindFirstChild("Head") then
-                    c.Head.Size = Vector3.new(4, 4, 4)
-                end
+                if c and c:FindFirstChild("Head") then c.Head.Size = Vector3.new(4, 4, 4) end
             elseif runCode == "screenfx" then
                 local fx = Instance.new("ColorCorrectionEffect"); fx.Name = "ScreenFX"; fx.TintColor = Color3.fromRGB(255, 100, 200); fx.Parent = Lighting
             elseif runCode == "trail" then
@@ -1115,7 +1156,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                     local now = os.date("*t")
                     timeLabel.Text = now.year .. "年" .. now.month .. "月" .. now.day .. "日 " .. string.format("%02d:%02d:%02d", now.hour, now.min, now.sec)
                 end)
-                infJumpConnection = {Disconnect = function() subActive = false; if subGui then subGui:Destroy() end; if renderConn then renderConn:Disconnect() end end}
+                toggleConn = {Disconnect = function() subActive = false; if subGui then subGui:Destroy() end; if renderConn then renderConn:Disconnect() end end}
             elseif runCode == "rainbowname" then
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("Head") then
@@ -1130,7 +1171,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                     end
                 end
                 local hue2 = 0
-                infJumpConnection = RunService.RenderStepped:Connect(function(delta)
+                toggleConn = RunService.RenderStepped:Connect(function(delta)
                     hue2 = (hue2 + delta * 0.5) % 1
                     local c2 = Players.LocalPlayer.Character
                     if c2 and c2:FindFirstChild("Head") then
@@ -1150,7 +1191,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 end
             elseif runCode == "deletepart" then
                 local mouse = Players.LocalPlayer:GetMouse(); local curGui = nil; local curHl = nil
-                infJumpConnection = mouse.Button1Down:Connect(function()
+                toggleConn = mouse.Button1Down:Connect(function()
                     local t = mouse.Target
                     if t then
                         if curGui then curGui:Destroy() end; if curHl then curHl:Destroy() end
@@ -1177,39 +1218,39 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                         cancelBtn.MouseButton1Click:Connect(function() if curHl then curHl:Destroy() end; cg:Destroy() end)
                     end
                 end)
-            elseif runCode == "infjump" then infJumpEnabled = true; infJumpConnection = UserInputService.JumpRequest:Connect(function() if infJumpEnabled then local c = Players.LocalPlayer.Character; if c and c:FindFirstChild("Humanoid") then c.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end end end) end
+            elseif runCode == "infjump" then infJumpEnabled = true; toggleConn = UserInputService.JumpRequest:Connect(function() if infJumpEnabled then local c = Players.LocalPlayer.Character; if c and c:FindFirstChild("Humanoid") then c.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end end end) end
         else
             Toggle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
             ToggleKnob:TweenPosition(UDim2.new(0, 2, 0, 2), "Out", "Quad", 0.15)
-            if runCode == "esp" then disableESP()
+            if runCode == "esp" then enableESP()
             elseif runCode == "night" then Lighting.Brightness = 1; Lighting.GlobalShadows = true
             elseif runCode == "fps" then fpsEnabled = false; FPSLabel.Visible = false
-            elseif runCode == "float" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
-            elseif runCode == "collect" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
-            elseif runCode == "clicktp" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
-            elseif runCode == "autoclick" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
-            elseif runCode == "speedhack" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
-            elseif runCode == "itemesp" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            elseif runCode == "float" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "collect" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "clicktp" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "autoclick" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "speedhack" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "itemesp" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
             elseif runCode == "invisible" then
                 local c = Players.LocalPlayer.Character
                 if c then for _, v in ipairs(c:GetDescendants()) do if v:IsA("BasePart") then v.Transparency = 0 end end end
             elseif runCode == "noclip" then local c = Players.LocalPlayer.Character; if c then for _, v in ipairs(c:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = true end end end
-            elseif runCode == "god" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
-            elseif runCode == "teamglow" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end; clearTeamGlow()
-            elseif runCode == "enemyglow" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end; clearEnemyGlow()
-            elseif runCode == "autoattack" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            elseif runCode == "god" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "teamglow" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end; clearTeamGlow()
+            elseif runCode == "enemyglow" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end; clearEnemyGlow()
+            elseif runCode == "autoattack" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
             elseif runCode == "fulllight" then Lighting.Brightness = 1; Lighting.GlobalShadows = true
             elseif runCode == "superspeed" then
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("Humanoid") then c.Humanoid.WalkSpeed = 16 end
-            elseif runCode == "infstamina" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
-            elseif runCode == "infammo" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+            elseif runCode == "infstamina" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "infammo" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
             elseif runCode == "serverinfo" then
-                if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+                if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
                 local infoGui = PlayerGui:FindFirstChild("ServerInfoGui")
                 if infoGui then infoGui:Destroy() end
             elseif runCode == "dance1" then
-                if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+                if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("Humanoid") then
                     for _, t in ipairs(c.Humanoid:GetPlayingAnimationTracks()) do t:Stop() end
@@ -1264,14 +1305,13 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                     local a1 = c.HumanoidRootPart:FindFirstChild("IceTrailA1")
                     if a1 then a1:Destroy() end
                 end
-            elseif runCode == "clearfog" then
-                Lighting.FogEnd = 1000; Lighting.FogStart = 0
+            elseif runCode == "clearfog" then Lighting.FogEnd = 1000; Lighting.FogStart = 0
             elseif runCode == "subtitle" then
-                if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+                if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
                 local subGui = PlayerGui:FindFirstChild("SubtitleGui")
                 if subGui then subGui:Destroy() end
             elseif runCode == "rainbowname" then
-                if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
+                if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("Head") then
                     local bb = c.Head:FindFirstChild("BillboardGui")
@@ -1284,12 +1324,13 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                         if v:IsA("BasePart") then v.Size = v.Size / 3 end
                     end
                 end
-            elseif runCode == "deletepart" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
-            elseif runCode == "infjump" then infJumpEnabled = false; if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end end
+            elseif runCode == "deletepart" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "infjump" then infJumpEnabled = false; if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            end
         end
     end)
 end
--- 主脚本 第4段（前半）：createInputCard + createMusicCard + 公告时间更新 + homePosition
+-- 主脚本 第5段：createInputCard + createMusicCard + 公告 + 搜索框 + homePosition + 作者ESP
 
 local function createInputCard(parent, name, description, icon, defaultValue, onExecute)
     local Card = Instance.new("Frame")
@@ -1415,7 +1456,7 @@ local function getTime()
 end
 local function updateTime()
     if announcementTextBox then
-        announcementTextBox.Text = "⏰ " .. getTime() .. "\n\n👤 制作者：C Studio\n📅 创建日期：2026年7月10日\n🔄 此脚本一直更新\n\n📊 您目前已经执行了 " .. globalExecCount .. " 次，感谢您的支持！\n\n🎮 玩法：开启功能后在游戏中体验效果\n如果在游玩时遇到任何问题 请报告给我们❤️\n最大帮助者:CHANGCHENG66☕\n\n感谢 hacker_lololo888的支持❤️❤️❤️❤️❤️\n开学了更新会变慢👁️秋辞死100个妈😂😂😂"
+        announcementTextBox.Text = "黑脚本 V2.0 已发布\n\n对比 V1.5 新增功能：\n\n1. 全局搜索功能\n   公告页搜索框输入关键词，按空格搜索，点击结果跳转对应页面\n\n2. 彩虹边框\n   设置页可选彩虹色，主边框和灵动岛同步变色\n\n3. 手机版面板比例\n   设置页一键切换平板/手机尺寸\n\n4. 跟随玩家取消\n   按空格/跳跃键即可取消跟随\n\n5. 面板边框颜色自定义\n   设置页可选八种预设颜色\n\n6. 作者专属ESP\n   默认开启，透视玩家 CHANGCHENG66\n\n---\n\n执行次数：" .. globalExecCount .. " 次\n\n作者：CHANGCHENG66"
     end
 end
 spawn(function() while true do updateTime(); wait(1) end end)
@@ -1427,7 +1468,78 @@ spawn(function()
         homePosition = c.HumanoidRootPart.CFrame
     end
 end)
--- 主脚本 第4段（后半）：pageContents 页面配置表
+
+-- ============ 作者ESP（受设置页开关控制） ============
+local authorEspEnabled = true
+
+local function addAuthorESP(p)
+    if not authorEspEnabled then return end
+    if p.Name ~= "CHANGCHENG66" then return end
+    if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end) end
+    if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end) end
+    
+    local function s(c)
+        if not c then return end
+        local hl = Instance.new("Highlight")
+        hl.FillColor = Color3.fromRGB(255, 215, 0)
+        hl.FillTransparency = 0.3
+        hl.OutlineColor = Color3.fromRGB(255, 215, 0)
+        hl.OutlineTransparency = 0
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.Adornee = c
+        hl.Parent = c
+        espHighlights[p] = hl
+        
+        local h = c:FindFirstChild("Head")
+        if h then
+            local bb = Instance.new("BillboardGui")
+            bb.Size = UDim2.new(0, 200, 0, 40)
+            bb.StudsOffset = Vector3.new(0, 3.5, 0)
+            bb.AlwaysOnTop = true
+            bb.Parent = h
+            local nl = Instance.new("TextLabel")
+            nl.Size = UDim2.new(1, 0, 1, 0)
+            nl.BackgroundTransparency = 1
+            nl.Text = "👑 " .. p.Name .. " · 此脚本作者"
+            nl.TextColor3 = Color3.fromRGB(255, 215, 0)
+            nl.Font = Enum.Font.GothamBold
+            nl.TextSize = 16
+            nl.TextStrokeTransparency = 0
+            nl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+            nl.Parent = bb
+            espBillboards[p] = bb
+        end
+    end
+    
+    if p.Character then s(p.Character) end
+    p.CharacterAdded:Connect(function(c) if authorEspEnabled then s(c) end end)
+end
+
+local function refreshAuthorESP()
+    clearESP()
+    if authorEspEnabled then
+        for _, p in ipairs(Players:GetPlayers()) do addAuthorESP(p) end
+    end
+end
+
+function enableAuthorESP()
+    authorEspEnabled = true
+    refreshAuthorESP()
+end
+
+function disableAuthorESP()
+    authorEspEnabled = false
+    clearESP()
+end
+
+-- 初始开启
+for _, p in ipairs(Players:GetPlayers()) do addAuthorESP(p) end
+Players.PlayerAdded:Connect(function(p) if authorEspEnabled then addAuthorESP(p) end end)
+Players.PlayerRemoving:Connect(function(p)
+    if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end); espHighlights[p] = nil end
+    if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end); espBillboards[p] = nil end
+end)
+-- 主脚本 第6段：pageContents 全部页面数据（公告、通用、战斗、整活、音乐）
 
 local pageContents = {
     ["公告"] = {type = "text"},
@@ -1438,7 +1550,7 @@ local pageContents = {
             {type = "button", name = "碰撞甩飞", desc = "帅飞plud", icon = "😎", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/帅飞"},
             {type = "button", name = "fps通用", desc = "自动瞄准脚本", icon = "🎯", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E8%87%AA%E7%9E%84"},
             {type = "button", name = "传送玩家", desc = "选择玩家传送到旁边", icon = "📬", url = "teleport"},
-            {type = "button", name = "跟随玩家", desc = "选择玩家自动跟随", icon = "🚶", url = "follow"},
+            {type = "button", name = "跟随玩家", desc = "按跳跃键取消跟随", icon = "🚶", url = "follow"},
             {type = "button", name = "NTv3.3", desc = "多功能工具", icon = "🥚", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/nt"},
             {type = "button", name = "无限罗宝", desc = "亲测可用", icon = "🌷", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/锁机"},
             {type = "button", name = "Tx翻译", desc = "点击执行", icon = "⛽", url = "https://raw.githubusercontent.com/JsYb666/Item/refs/heads/main/Auto-language"},
@@ -1533,134 +1645,162 @@ local pageContents = {
             {name = "祖国人进行曲", desc = "点击播放", icon = "🎃", soundId = "86555185586884"},
         }
     },
-    ["甩飞"] = {
-        type = "buttons",
-        items = {{name = "多人甩飞", desc = "选择玩家然后甩飞", icon = "💨", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E7%94%A9%E9%A3%9E"}}
-    },
-    ["服务器"] = {
-        type = "buttons",
-        items = {
-            {name = "死铁轨(黑脚本)", desc = "点击执行", icon = "🚂", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/铁轨"},
-            {name = "柠檬大亨", desc = "点击执行", icon = "🍋", url = "https://rawscripts.net/raw/Sell-Lemons-Fluid-Orchard-Update-Read-Description-241132"},
-            {name = "键盘逃脱", desc = "点击执行", icon = "⌨️", url = "https://raw.githubusercontent.com/ccdushii/zzzzzzzzz/refs/heads/main/ssssssssss"},
-            {name = "驾驶帝国", desc = "皮脚本版", icon = "🚗", url = "https://raw.githubusercontent.com/xiaopi77/xiaopi77/refs/heads/main/Roblox-Pi-Drivingempire-Script.lua"},
-            {name = "排干湖水", desc = "点击执行", icon = "💧", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E6%8E%92%E5%B9%B2%E6%B9%96%E6%B0%B4"},
-            {name = "Doors", desc = "点击执行", icon = "🚪", url = "https://raw.githubusercontent.com/XxwanhexxX/doors-zh/refs/heads/main/Abysall.Hub"},
-            {name = "后巷", desc = "点击执行", icon = "🏚️", url = "https://github.com/mryitang-sys/Ting-script/releases/download/nsjxjxhs/GE.2.6.lua"},
-            {name = "点击一次加一弹药", desc = "点击执行", icon = "🔫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E5%BC%B9%E8%8D%AF"},
-            {name = "森林中的九十九夜", desc = "点击执行", icon = "🌲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/99"},
-            {name = "踢一个幸运方块", desc = "点击执行", icon = "🎲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E5%B9%B8%E8%BF%90%E6%96%B9%E5%9D%97"},
-            {name = "重型钓鱼", desc = "点击执行", icon = "🐬", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/重型钓鱼"},
-            {name = "每次点击加1脂肪", desc = "点击执行", icon = "🍔", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/脂肪"},
-            {name = "动物医院", desc = "点击执行", icon = "🚑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/福瑞医院"},
-            {name = "每次点击加1关注者", desc = "点击执行", icon = "❤️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/关注"},
-            {name = "吃吃世界", desc = "点击执行", icon = "🍱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/吃吃世界"},
-            {name = "为你的城市供电", desc = "点击执行", icon = "🚦", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/为你的城市供电"},
-            {name = "抛一枚硬币", desc = "点击执行", icon = "🎃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/抛一枚硬币"},
-            {name = "po大po", desc = "点击执行", icon = "🌰", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/拉大便"},
-            {name = "blox Fruit", desc = "点击执行", icon = "🍎", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/blox"},
-            {name = "悬崖豪宅大亨", desc = "点击执行", icon = "🥂", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/豪宅悬崖"},
-            {name = "草地增量模拟器", desc = "点击执行", icon = "🌿", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/草地增亮"},
-            {name = "餐厅大亨3", desc = "点击执行", icon = "☕", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/餐厅大亨"},
-            {name = "破坏者谜团二", desc = "点击执行", icon = "☠️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/mm2"},
-            {name = "画一个滑雪板", desc = "点击执行", icon = "🛴", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/画画"},
-            {name = "拥有一家咖啡馆", desc = "点击执行", icon = "🍵", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/拥有咖啡馆"},
-            {name = "快躲起来吧！", desc = "点击执行", icon = "🐾", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/躲起来"},
-            {name = "钓鱼吧", desc = "点击执行", icon = "🦈", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/调"},
-            {name = "清洗键盘", desc = "点击执行", icon = "⌨️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/清洗键盘"},
-            {name = "装载卡车", desc = "点击执行", icon = "🚛", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/装载卡车"},
-            {name = "fisch", desc = "点击执行", icon = "🐠", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/船鱼"},
-            {name = "种植花园2", desc = "点击执行", icon = "☘️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/种植菜园二"},
-            {name = "活了7天", desc = "点击执行", icon = "🐻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/活了7天"},
-            {name = "被遗弃", desc = "点击执行", icon = "👻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/被遗弃"},
-            {name = "河北唐县", desc = "点击执行", icon = "🚙", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/河北"},
-            {name = "在末日中活下来", desc = "点击执行", icon = "🤢", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/末日"},
-            {name = "零售大亨2", desc = "点击执行", icon = "🛷", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/零售大亨"},
-            {name = "采矿大亨", desc = "点击执行", icon = "🦇", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/采矿"},
-            {name = "启示录", desc = "点击执行", icon = "⚠️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/启示录"},
-            {name = "战争大亨", desc = "点击执行", icon = "🦚", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/战争"},
-            {name = "海上生存100天", desc = "点击执行", icon = "💧", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/海上100天"},
-            {name = "俄亥俄州", desc = "点击执行", icon = "🦉", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/ohio"},
-            {name = "加1割草冒险", desc = "点击执行", icon = "🌱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/割草冒险"},
-            {name = "贪婪的种植者", desc = "点击执行", icon = "🤑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/种植者"},
-            {name = "加1剑点击", desc = "点击执行", icon = "🖕🏻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/剑1"},
-            {name = "在超级商店生存", desc = "点击执行", icon = "🥓", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/在超级商店生存"},
-            {name = "在寒冷中生存", desc = "点击执行", icon = "🥶", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/在寒冷生存"},
-            {name = "训练一只鸡", desc = "点击执行", icon = "🐓", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/训练鸡肉"},
-            {name = "尘土飞扬的旅行", desc = "点击执行", icon = "🚘", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/长途旅行"},
-            {name = "最强战场", desc = "点击执行", icon = "👾", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/强大战场"},
-            {name = "跳跃获得足球球员", desc = "点击执行", icon = "🎈", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/获得球员"},
-            {name = "伐木大亨2", desc = "点击执行", icon = "🌳", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/伐木大亨"},
-            {name = "偷一个蛋", desc = "点击执行", icon = "🥚", url = "https://pastefy.app/HSmCVvE9/raw"},
-            {name = "变身升级", desc = "点击执行", icon = "🐛", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/变身升级"},
-            {name = "加1肌肉破坏墙壁", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/肌肉墙壁"},
-            {name = "加1翅膀偷走脑残", desc = "点击执行", icon = "🍪", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/翅膀脑残"},
-            {name = "踢球进太空", desc = "点击执行", icon = "🐃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/踢球太空"},
-            {name = "魔法战利品", desc = "点击执行", icon = "✨", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/魔法战利品"},
-            {name = "夜幕降临", desc = "点击执行", icon = "🐼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/夜幕降临"},
-            {name = "我的恐龙生活", desc = "点击执行", icon = "🦖", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/恐龙生活"},
-            {name = "加一双跳自行车", desc = "点击执行", icon = "🚲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/双跳车"},
-            {name = "谋杀之岛2", desc = "点击执行", icon = "🌶️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/谋杀之岛"},
-            {name = "声名远播", desc = "点击执行", icon = "🍃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/抢劫"},
-            {name = "加1速度僵尸键盘逃脱", desc = "点击执行", icon = "🐊", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/僵尸键盘"},
-            {name = "清理所有树叶", desc = "点击执行", icon = "🍁", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/清理树叶"},
-            {name = "开箱asmr", desc = "点击执行", icon = "🍰", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/开箱脆皮"},
-            {name = "因为脑残退化而倒下", desc = "点击执行", icon = "🐊", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/脑残倒下"},
-            {name = "我的木材农场", desc = "点击执行", icon = "🌲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/我的木材农场"},
-            {name = "加一个后空翻键盘逃脱", desc = "点击执行", icon = "💀", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/后空翻键盘"},
-            {name = "每次点击加一排水速度", desc = "点击执行", icon = "💧", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/点击加排水"},
-            {name = "加一肌肉进化", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一肌肉精华"},
-            {name = "抽取一只军队", desc = "点击执行", icon = "🍼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/抽军队"},
-            {name = "合拼一个核弹", desc = "点击执行", icon = "😺", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/合并核弹"},
-            {name = "加一速度进化", desc = "点击执行", icon = "🐒", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加速度进化"},
-            {name = "逃跑者", desc = "点击执行", icon = "👻", url = "https://raw.githubusercontent.com/hgvuyguyg/sbqr/main/淘宝"},
-            {name = "击杀头目", desc = "点击执行", icon = "🎅🏿", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/击杀头目"},
-            {name = "加一速度沙滩逃脱", desc = "点击执行", icon = "🏖️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一沙滩"},
-            {name = "dit", desc = "点击执行", icon = "🦰", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/dit"},
-            {name = "正在探矿", desc = "点击执行", icon = "👀", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/正在挖矿"},
-            {name = "蝗虫之屋", desc = "点击执行", icon = "🦗", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/蝗虫之王"},
-            {name = "加一超级英雄进化", desc = "点击执行", icon = "🐲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加油英雄"},
-            {name = "拯救猫咪", desc = "点击执行", icon = "🐱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/拯救猫"},
-            {name = "恐怖寿司[第一章]", desc = "点击执行", icon = "😱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/寿司"},
-            {name = "加一蛛丝逃脱", desc = "点击执行", icon = "🕸️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一蜘蛛"},
-            {name = "加一跳墙奥比逃脱", desc = "点击执行", icon = "🛫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一跳墙"},
-            {name = "按一个键帽", desc = "点击执行", icon = "🍅", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/按键帽"},
-            {name = "在51区生存真相", desc = "点击执行", icon = "🤫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/51真相"},
-            {name = "每步减重", desc = "点击执行", icon = "🦵", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/走路减重"},
-            {name = "矿井", desc = "点击执行", icon = "🛶", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/矿井"},
-            {name = "神秘的杀手", desc = "点击执行", icon = "👹", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/神秘的杀手"},
-            {name = "寻找菜鸟并变身", desc = "点击执行", icon = "🍸", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/寻找菜鸟"},
-            {name = "加一技能点传奇", desc = "点击执行", icon = "⚔️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一技能点"},
-            {name = "加一忍者键盘逃脱", desc = "点击执行", icon = "🌑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一忍者"},
-            {name = "破碎之梦", desc = "点击执行", icon = "❤️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/破碎之梦"},
-            {name = "钓鱼换取垃圾", desc = "点击执行", icon = "🐡", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/钓鱼垃圾"},
-            {name = "新手间接式", desc = "点击执行", icon = "🤨", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/新手间接式"},
-            {name = "烤或死", desc = "点击执行", icon = "🍖", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/烤活死"},
-            {name = "加一跳跃", desc = "点击执行", icon = "🦘", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一跳跃逃脱"},
-            {name = "挖掘以逃脱", desc = "点击执行", icon = "🎃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/挖掘逃出监狱"},
-            {name = "飞行世界", desc = "点击执行", icon = "✈️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/飞行世界"},
-            {name = "空乘模拟器", desc = "点击执行", icon = "🛫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/空乘模拟机"},
-            {name = "埃尔帕索边境角色扮演", desc = "点击执行", icon = "🤑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/帕索角色扮演"},
-            {name = "加一玩具长臂逃脱", desc = "点击执行", icon = "🤳", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/玩具长臂"},
-            {name = "墨水(别催了)", desc = "点击执行", icon = "😢", url = "https://raw.githubusercontent.com/wefwef34/inkgames.github.io/refs/heads/main/ringta.lua"},
-            {name = "无尽旅馆", desc = "点击执行", icon = "😎", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/k"},
-            {name = "力量传奇", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/力量"},
-        }
-    },
-    ["国内脚本"] = {
-        type = "buttons",
-        items = {
-            {name = "小皮脚本", desc = "拉完了", icon = "🇨🇳", url = "https://raw.githubusercontent.com/xiaopi77/xiaopi77/main/QQ1002100032-Roblox-Pi-script.lua"},
-            {name = "黑洞脚本", desc = "BS脚本", icon = "🕳️", url = "https://gitee.com/BS_script/script/raw/master/BS_Script.Luau"},
-            {name = "ROB脚本", desc = "ROB.V3", icon = "🤖", url = "https://raw.githubusercontent.com/idrobsc/rob_script/refs/heads/main/rob.v4"},
-            {name = "黄某脚本", desc = "拉完了缝合", icon = "😞", url = "https://rawscripts.net/raw/Universal-Script-HMscript-50384"},
-            {name = "Loarder脚本", desc = "拉完了", icon = "🤔", url = "https://raw.githubusercontent.com/Jilxi/123/refs/heads/main/Loader.lua"},
-        }
-    },
-  }
-  -- 主脚本 第5段：页面生成 + 打开/关闭动画 + 导航初始化
+}
+-- 主脚本 第7段：pageContents 剩余页面 + 页面生成 + 搜索框 + 彩虹色按钮
+
+pageContents["甩飞"] = {
+    type = "buttons",
+    items = {{name = "多人甩飞", desc = "选择玩家然后甩飞", icon = "💨", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E7%94%A9%E9%A3%9E"}}
+}
+
+pageContents["服务器"] = {
+    type = "buttons",
+    items = {
+        {name = "死铁轨(黑脚本)", desc = "点击执行", icon = "🚂", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/铁轨"},
+        {name = "柠檬大亨", desc = "点击执行", icon = "🍋", url = "https://rawscripts.net/raw/Sell-Lemons-Fluid-Orchard-Update-Read-Description-241132"},
+        {name = "键盘逃脱", desc = "点击执行", icon = "⌨️", url = "https://raw.githubusercontent.com/ccdushii/zzzzzzzzz/refs/heads/main/ssssssssss"},
+        {name = "驾驶帝国", desc = "皮脚本版", icon = "🚗", url = "https://raw.githubusercontent.com/xiaopi77/xiaopi77/refs/heads/main/Roblox-Pi-Drivingempire-Script.lua"},
+        {name = "排干湖水", desc = "点击执行", icon = "💧", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E6%8E%92%E5%B9%B2%E6%B9%96%E6%B0%B4"},
+        {name = "Doors", desc = "点击执行", icon = "🚪", url = "https://raw.githubusercontent.com/XxwanhexxX/doors-zh/refs/heads/main/Abysall.Hub"},
+        {name = "后巷", desc = "点击执行", icon = "🏚️", url = "https://github.com/mryitang-sys/Ting-script/releases/download/nsjxjxhs/GE.2.6.lua"},
+        {name = "点击一次加一弹药", desc = "点击执行", icon = "🔫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E5%BC%B9%E8%8D%AF"},
+        {name = "森林中的九十九夜", desc = "点击执行", icon = "🌲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/99"},
+        {name = "踢一个幸运方块", desc = "点击执行", icon = "🎲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E5%B9%B8%E8%BF%90%E6%96%B9%E5%9D%97"},
+        {name = "重型钓鱼", desc = "点击执行", icon = "🐬", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/重型钓鱼"},
+        {name = "每次点击加1脂肪", desc = "点击执行", icon = "🍔", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/脂肪"},
+        {name = "动物医院", desc = "点击执行", icon = "🚑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/福瑞医院"},
+        {name = "每次点击加1关注者", desc = "点击执行", icon = "❤️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/关注"},
+        {name = "吃吃世界", desc = "点击执行", icon = "🍱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/吃吃世界"},
+        {name = "为你的城市供电", desc = "点击执行", icon = "🚦", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/为你的城市供电"},
+        {name = "抛一枚硬币", desc = "点击执行", icon = "🎃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/抛一枚硬币"},
+        {name = "po大po", desc = "点击执行", icon = "🌰", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/拉大便"},
+        {name = "blox Fruit", desc = "点击执行", icon = "🍎", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/blox"},
+        {name = "悬崖豪宅大亨", desc = "点击执行", icon = "🥂", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/豪宅悬崖"},
+        {name = "草地增量模拟器", desc = "点击执行", icon = "🌿", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/草地增亮"},
+        {name = "餐厅大亨3", desc = "点击执行", icon = "☕", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/餐厅大亨"},
+        {name = "破坏者谜团二", desc = "点击执行", icon = "☠️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/mm2"},
+        {name = "画一个滑雪板", desc = "点击执行", icon = "🛴", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/画画"},
+        {name = "拥有一家咖啡馆", desc = "点击执行", icon = "🍵", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/拥有咖啡馆"},
+        {name = "快躲起来吧！", desc = "点击执行", icon = "🐾", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/躲起来"},
+        {name = "钓鱼吧", desc = "点击执行", icon = "🦈", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/调"},
+        {name = "清洗键盘", desc = "点击执行", icon = "⌨️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/清洗键盘"},
+        {name = "装载卡车", desc = "点击执行", icon = "🚛", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/装载卡车"},
+        {name = "fisch", desc = "点击执行", icon = "🐠", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/船鱼"},
+        {name = "种植花园2", desc = "点击执行", icon = "☘️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/种植菜园二"},
+        {name = "活了7天", desc = "点击执行", icon = "🐻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/活了7天"},
+        {name = "被遗弃", desc = "点击执行", icon = "👻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/被遗弃"},
+        {name = "河北唐县", desc = "点击执行", icon = "🚙", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/河北"},
+        {name = "在末日中活下来", desc = "点击执行", icon = "🤢", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/末日"},
+        {name = "零售大亨2", desc = "点击执行", icon = "🛷", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/零售大亨"},
+        {name = "采矿大亨", desc = "点击执行", icon = "🦇", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/采矿"},
+        {name = "启示录", desc = "点击执行", icon = "⚠️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/启示录"},
+        {name = "战争大亨", desc = "点击执行", icon = "🦚", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/战争"},
+        {name = "海上生存100天", desc = "点击执行", icon = "💧", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/海上100天"},
+        {name = "俄亥俄州", desc = "点击执行", icon = "🦉", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/ohio"},
+        {name = "加1割草冒险", desc = "点击执行", icon = "🌱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/割草冒险"},
+        {name = "贪婪的种植者", desc = "点击执行", icon = "🤑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/种植者"},
+        {name = "加1剑点击", desc = "点击执行", icon = "🖕🏻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/剑1"},
+        {name = "在超级商店生存", desc = "点击执行", icon = "🥓", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/在超级商店生存"},
+        {name = "在寒冷中生存", desc = "点击执行", icon = "🥶", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/在寒冷生存"},
+        {name = "训练一只鸡", desc = "点击执行", icon = "🐓", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/训练鸡肉"},
+        {name = "尘土飞扬的旅行", desc = "点击执行", icon = "🚘", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/长途旅行"},
+        {name = "最强战场", desc = "点击执行", icon = "👾", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/强大战场"},
+        {name = "跳跃获得足球球员", desc = "点击执行", icon = "🎈", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/获得球员"},
+        {name = "伐木大亨2", desc = "点击执行", icon = "🌳", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/伐木大亨"},
+        {name = "偷一个蛋", desc = "点击执行", icon = "🥚", url = "https://pastefy.app/HSmCVvE9/raw"},
+        {name = "变身升级", desc = "点击执行", icon = "🐛", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/变身升级"},
+        {name = "加1肌肉破坏墙壁", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/肌肉墙壁"},
+        {name = "加1翅膀偷走脑残", desc = "点击执行", icon = "🍪", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/翅膀脑残"},
+        {name = "踢球进太空", desc = "点击执行", icon = "🐃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/踢球太空"},
+        {name = "魔法战利品", desc = "点击执行", icon = "✨", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/魔法战利品"},
+        {name = "夜幕降临", desc = "点击执行", icon = "🐼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/夜幕降临"},
+        {name = "我的恐龙生活", desc = "点击执行", icon = "🦖", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/恐龙生活"},
+        {name = "加一双跳自行车", desc = "点击执行", icon = "🚲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/双跳车"},
+        {name = "谋杀之岛2", desc = "点击执行", icon = "🌶️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/谋杀之岛"},
+        {name = "声名远播", desc = "点击执行", icon = "🍃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/抢劫"},
+        {name = "加1速度僵尸键盘逃脱", desc = "点击执行", icon = "🐊", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/僵尸键盘"},
+        {name = "清理所有树叶", desc = "点击执行", icon = "🍁", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/清理树叶"},
+        {name = "开箱asmr", desc = "点击执行", icon = "🍰", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/开箱脆皮"},
+        {name = "因为脑残退化而倒下", desc = "点击执行", icon = "🐊", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/脑残倒下"},
+        {name = "我的木材农场", desc = "点击执行", icon = "🌲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/我的木材农场"},
+        {name = "加一个后空翻键盘逃脱", desc = "点击执行", icon = "💀", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/后空翻键盘"},
+        {name = "每次点击加一排水速度", desc = "点击执行", icon = "💧", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/点击加排水"},
+        {name = "加一肌肉进化", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一肌肉精华"},
+        {name = "抽取一只军队", desc = "点击执行", icon = "🍼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/抽军队"},
+        {name = "合拼一个核弹", desc = "点击执行", icon = "😺", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/合并核弹"},
+        {name = "加一速度进化", desc = "点击执行", icon = "🐒", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加速度进化"},
+        {name = "逃跑者", desc = "点击执行", icon = "👻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/逃跑者"},
+        {name = "击杀头目", desc = "点击执行", icon = "🎅🏿", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/击杀头目"},
+        {name = "加一速度沙滩逃脱", desc = "点击执行", icon = "🏖️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一沙滩"},
+        {name = "dit", desc = "点击执行", icon = "🦰", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/dit"},
+        {name = "正在探矿", desc = "点击执行", icon = "👀", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/正在挖矿"},
+        {name = "蝗虫之屋", desc = "点击执行", icon = "🦗", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/蝗虫之王"},
+        {name = "加一超级英雄进化", desc = "点击执行", icon = "🐲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加油英雄"},
+        {name = "拯救猫咪", desc = "点击执行", icon = "🐱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/拯救猫"},
+        {name = "恐怖寿司[第一章]", desc = "点击执行", icon = "😱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/寿司"},
+        {name = "加一蛛丝逃脱", desc = "点击执行", icon = "🕸️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一蜘蛛"},
+        {name = "加一跳墙奥比逃脱", desc = "点击执行", icon = "🛫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一跳墙"},
+        {name = "按一个键帽", desc = "点击执行", icon = "🍅", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/按键帽"},
+        {name = "在51区生存真相", desc = "点击执行", icon = "🤫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/51真相"},
+        {name = "每步减重", desc = "点击执行", icon = "🦵", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/走路减重"},
+        {name = "矿井", desc = "点击执行", icon = "🛶", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/矿井"},
+        {name = "神秘的杀手", desc = "点击执行", icon = "👹", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/神秘的杀手"},
+        {name = "寻找菜鸟并变身", desc = "点击执行", icon = "🍸", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/寻找菜鸟"},
+        {name = "加一技能点传奇", desc = "点击执行", icon = "⚔️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一技能点"},
+        {name = "加一忍者键盘逃脱", desc = "点击执行", icon = "🌑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一忍者"},
+        {name = "破碎之梦", desc = "点击执行", icon = "❤️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/破碎之梦"},
+        {name = "钓鱼换取垃圾", desc = "点击执行", icon = "🐡", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/钓鱼垃圾"},
+        {name = "新手间接式", desc = "点击执行", icon = "🤨", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/新手间接式"},
+        {name = "烤或死", desc = "点击执行", icon = "🍖", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/烤活死"},
+        {name = "加一跳跃", desc = "点击执行", icon = "🦘", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一跳跃逃脱"},
+        {name = "挖掘以逃脱", desc = "点击执行", icon = "🎃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/挖掘逃出监狱"},
+        {name = "飞行世界", desc = "点击执行", icon = "✈️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/飞行世界"},
+        {name = "空乘模拟器", desc = "点击执行", icon = "🛫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/空乘模拟机"},
+        {name = "埃尔帕索边境角色扮演", desc = "点击执行", icon = "🤑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/帕索角色扮演"},
+        {name = "加一玩具长臂逃脱", desc = "点击执行", icon = "🤳", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/玩具长臂"},
+        {name = "墨水(别催了)", desc = "点击执行", icon = "😢", url = "https://raw.githubusercontent.com/wefwef34/inkgames.github.io/refs/heads/main/ringta.lua"},
+        {name = "无尽旅馆", desc = "点击执行", icon = "😎", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/k"},
+        {name = "力量传奇", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/力量"},
+    }
+}
+
+pageContents["国内脚本"] = {
+    type = "buttons",
+    items = {
+        {name = "小皮脚本", desc = "拉完了", icon = "🇨🇳", url = "https://raw.githubusercontent.com/xiaopi77/xiaopi77/main/QQ1002100032-Roblox-Pi-script.lua"},
+        {name = "黑洞脚本", desc = "BS脚本", icon = "🕳️", url = "https://gitee.com/BS_script/script/raw/master/BS_Script.Luau"},
+        {name = "ROB脚本", desc = "ROB.V3", icon = "🤖", url = "https://raw.githubusercontent.com/idrobsc/rob_script/refs/heads/main/rob.v4"},
+        {name = "黄某脚本", desc = "拉完了缝合", icon = "😞", url = "https://rawscripts.net/raw/Universal-Script-HMscript-50384"},
+        {name = "Loarder脚本", desc = "拉完了", icon = "🤔", url = "https://raw.githubusercontent.com/Jilxi/123/refs/heads/main/Loader.lua"},
+    }
+}
+
+-- 存储所有功能项用于搜索
+local allFunctionItems = {}
+local function collectFunctionItems(pageName, items)
+    for _, item in ipairs(items) do
+        table.insert(allFunctionItems, {
+            page = pageName,
+            name = item.name,
+            desc = item.desc,
+            icon = item.icon,
+            type = item.type or "button",
+            data = item
+        })
+    end
+end
 
 for pageName, contentData in pairs(pageContents) do
+    if contentData.items then
+        collectFunctionItems(pageName, contentData.items)
+    end
+end
+
+-- 生成页面
+for pageName, contentData in pairs(pageContents) do
+    if pageName == "设置" then
+        continue
+    end
     local Page = Instance.new("ScrollingFrame")
     Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Page.BorderSizePixel = 0; Page.ScrollBarThickness = 3; Page.ScrollBarImageColor3 = Color3.fromRGB(200, 200, 200)
@@ -1668,15 +1808,200 @@ for pageName, contentData in pairs(pageContents) do
     local PageList = Instance.new("UIListLayout"); PageList.Padding = UDim.new(0, 6); PageList.Parent = Page
     local TopSpacer = Instance.new("Frame")
     TopSpacer.Size = UDim2.new(1, 0, 0, 6); TopSpacer.BackgroundTransparency = 1; TopSpacer.Parent = Page
-    if contentData.type == "text" then
+    
+    if pageName == "公告" then
+        -- 搜索框
+        local searchFrame = Instance.new("Frame")
+        searchFrame.Size = UDim2.new(1, -16, 0, 36)
+        searchFrame.Position = UDim2.new(0, 8, 0, 6)
+        searchFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+        searchFrame.BorderSizePixel = 0
+        searchFrame.ZIndex = 8
+        searchFrame.Parent = Page
+        local searchCorner = Instance.new("UICorner")
+        searchCorner.CornerRadius = UDim.new(0, 8)
+        searchCorner.Parent = searchFrame
+        
+        local searchIcon = Instance.new("TextLabel")
+        searchIcon.Size = UDim2.new(0, 30, 1, 0)
+        searchIcon.Text = "🔍"
+        searchIcon.TextSize = 14
+        searchIcon.BackgroundTransparency = 1
+        searchIcon.ZIndex = 9
+        searchIcon.Parent = searchFrame
+        
+        local searchBox = Instance.new("TextBox")
+        searchBox.Size = UDim2.new(1, -34, 1, 0)
+        searchBox.Position = UDim2.new(0, 34, 0, 0)
+        searchBox.PlaceholderText = "搜索功能... (按空格搜索)"
+        searchBox.Text = ""
+        searchBox.TextColor3 = Color3.fromRGB(50, 50, 50)
+        searchBox.Font = Enum.Font.Gotham
+        searchBox.TextSize = 13
+        searchBox.BackgroundTransparency = 1
+        searchBox.ZIndex = 9
+        searchBox.Parent = searchFrame
+        
+        -- 公告文本
         announcementTextBox = Instance.new("TextLabel")
-        announcementTextBox.Size = UDim2.new(1, -20, 0, 440); announcementTextBox.Position = UDim2.new(0, 10, 0, 6)
-        announcementTextBox.TextColor3 = Color3.fromRGB(70, 70, 70); announcementTextBox.Font = Enum.Font.Gotham
-        announcementTextBox.TextSize = 11; announcementTextBox.BackgroundTransparency = 1
-        announcementTextBox.TextXAlignment = Enum.TextXAlignment.Left; announcementTextBox.TextYAlignment = Enum.TextYAlignment.Top
-        announcementTextBox.TextWrapped = true; announcementTextBox.LineHeight = 1.5; announcementTextBox.ZIndex = 8
+        announcementTextBox.Size = UDim2.new(1, -20, 0, 440)
+        announcementTextBox.Position = UDim2.new(0, 10, 0, 48)
+        announcementTextBox.TextColor3 = Color3.fromRGB(70, 70, 70)
+        announcementTextBox.Font = Enum.Font.Gotham
+        announcementTextBox.TextSize = 11
+        announcementTextBox.BackgroundTransparency = 1
+        announcementTextBox.TextXAlignment = Enum.TextXAlignment.Left
+        announcementTextBox.TextYAlignment = Enum.TextYAlignment.Top
+        announcementTextBox.TextWrapped = true
+        announcementTextBox.LineHeight = 1.5
+        announcementTextBox.ZIndex = 8
         announcementTextBox.Parent = Page
-        Page.CanvasSize = UDim2.new(0, 0, 0, 460); updateTime()
+        Page.CanvasSize = UDim2.new(0, 0, 0, 500)
+        updateTime()
+        
+        -- 搜索结果容器（带UIListLayout）
+        local searchResultContainer = Instance.new("ScrollingFrame")
+        searchResultContainer.Size = UDim2.new(1, -16, 0, 0)
+        searchResultContainer.Position = UDim2.new(0, 8, 0, 48)
+        searchResultContainer.BackgroundTransparency = 1
+        searchResultContainer.BorderSizePixel = 0
+        searchResultContainer.ScrollBarThickness = 2
+        searchResultContainer.Visible = false
+        searchResultContainer.ZIndex = 8
+        searchResultContainer.Parent = Page
+        
+        local resultLayout = Instance.new("UIListLayout")
+        resultLayout.Padding = UDim.new(0, 4)
+        resultLayout.Parent = searchResultContainer
+        
+        local function doSearch(query)
+            for _, child in ipairs(searchResultContainer:GetChildren()) do
+                if child ~= resultLayout then child:Destroy() end
+            end
+            if query == "" or #query < 1 then
+                searchResultContainer.Visible = false
+                searchResultContainer.Size = UDim2.new(1, -16, 0, 0)
+                announcementTextBox.Visible = true
+                return
+            end
+            announcementTextBox.Visible = false
+            searchResultContainer.Visible = true
+            
+            local results = {}
+            local lowerQuery = query:lower()
+            for _, item in ipairs(allFunctionItems) do
+                if item.name:lower():find(lowerQuery) or (item.desc and item.desc:lower():find(lowerQuery)) then
+                    table.insert(results, item)
+                end
+            end
+            
+            if #results == 0 then
+                local noResult = Instance.new("TextLabel")
+                noResult.Size = UDim2.new(1, 0, 0, 40)
+                noResult.Text = "❌ 没有找到匹配的功能"
+                noResult.TextColor3 = Color3.fromRGB(150, 150, 150)
+                noResult.Font = Enum.Font.Gotham
+                noResult.TextSize = 14
+                noResult.BackgroundTransparency = 1
+                noResult.ZIndex = 9
+                noResult.Parent = searchResultContainer
+                searchResultContainer.Size = UDim2.new(1, -16, 0, 40)
+                searchResultContainer.CanvasSize = UDim2.new(0, 0, 0, 40)
+                return
+            end
+            
+            local totalHeight = #results * 48 + 10
+            searchResultContainer.Size = UDim2.new(1, -16, 0, math.min(totalHeight, 300))
+            searchResultContainer.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
+            
+            for _, item in ipairs(results) do
+                local resultCard = Instance.new("Frame")
+                resultCard.Size = UDim2.new(1, 0, 0, 44)
+                resultCard.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
+                resultCard.BorderSizePixel = 0
+                resultCard.ZIndex = 9
+                resultCard.Parent = searchResultContainer
+                local resultCorner = Instance.new("UICorner")
+                resultCorner.CornerRadius = UDim.new(0, 8)
+                resultCorner.Parent = resultCard
+                local stroke = Instance.new("UIStroke")
+                stroke.Color = Color3.fromRGB(220, 220, 220)
+                stroke.Thickness = 1
+                stroke.Parent = resultCard
+                
+                local iconLbl = Instance.new("TextLabel")
+                iconLbl.Size = UDim2.new(0, 30, 1, 0)
+                iconLbl.Text = item.icon
+                iconLbl.TextSize = 14
+                iconLbl.BackgroundTransparency = 1
+                iconLbl.ZIndex = 10
+                iconLbl.Parent = resultCard
+                
+                local nameLbl = Instance.new("TextLabel")
+                nameLbl.Size = UDim2.new(0, 180, 0, 16)
+                nameLbl.Position = UDim2.new(0, 34, 0, 4)
+                nameLbl.Text = item.name
+                nameLbl.TextColor3 = Color3.fromRGB(50, 50, 50)
+                nameLbl.Font = Enum.Font.GothamBold
+                nameLbl.TextSize = 12
+                nameLbl.BackgroundTransparency = 1
+                nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+                nameLbl.ZIndex = 10
+                nameLbl.Parent = resultCard
+                
+                local pageLbl = Instance.new("TextLabel")
+                pageLbl.Size = UDim2.new(0, 100, 0, 14)
+                pageLbl.Position = UDim2.new(0, 34, 0, 22)
+                pageLbl.Text = "📁 " .. item.page .. " | " .. (item.desc or "")
+                pageLbl.TextColor3 = Color3.fromRGB(150, 150, 150)
+                pageLbl.Font = Enum.Font.Gotham
+                pageLbl.TextSize = 10
+                pageLbl.BackgroundTransparency = 1
+                pageLbl.TextXAlignment = Enum.TextXAlignment.Left
+                pageLbl.ZIndex = 10
+                pageLbl.Parent = resultCard
+                
+                local goBtn = Instance.new("TextButton")
+                goBtn.Size = UDim2.new(0, 50, 0, 22)
+                goBtn.Position = UDim2.new(1, -56, 0, 11)
+                goBtn.Text = "前往"
+                goBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                goBtn.Font = Enum.Font.GothamBold
+                goBtn.TextSize = 10
+                goBtn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+                goBtn.BorderSizePixel = 0
+                goBtn.ZIndex = 10
+                goBtn.AutoButtonColor = false
+                goBtn.Parent = resultCard
+                local goCorner = Instance.new("UICorner")
+                goCorner.CornerRadius = UDim.new(0, 5)
+                goCorner.Parent = goBtn
+                goBtn.MouseButton1Click:Connect(function()
+                    for _, nav in ipairs(navButtons) do
+                        if nav.name == item.page then
+                            selectNav(nav.button, item.page)
+                            searchBox.Text = ""
+                            searchResultContainer.Visible = false
+                            searchResultContainer.Size = UDim2.new(1, -16, 0, 0)
+                            announcementTextBox.Visible = true
+                            break
+                        end
+                    end
+                end)
+            end
+        end
+        
+        searchBox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then doSearch(searchBox.Text) end
+        end)
+        
+        UserInputService.InputBegan:Connect(function(input, gp)
+            if gp then return end
+            if input.KeyCode == Enum.KeyCode.Space and searchBox:IsFocused() then
+                doSearch(searchBox.Text)
+            end
+        end)
+        
     elseif contentData.type == "toggles" then
         local n = 0
         for _, item in ipairs(contentData.items) do
@@ -1701,22 +2026,306 @@ for pageName, contentData in pairs(pageContents) do
     end
     contentPages[pageName] = Page
 end
+-- 主脚本 第8段：设置页功能 + 打开/关闭动画 + 导航初始化 + 结尾
+
+-- 创建设置页
+local settingsPage = Instance.new("ScrollingFrame")
+settingsPage.Size = UDim2.new(1, 0, 1, 0); settingsPage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+settingsPage.BorderSizePixel = 0; settingsPage.ScrollBarThickness = 3; settingsPage.ScrollBarImageColor3 = Color3.fromRGB(200, 200, 200)
+settingsPage.Visible = false; settingsPage.ZIndex = 7; settingsPage.Parent = ContentArea
+local settingsList = Instance.new("UIListLayout"); settingsList.Padding = UDim.new(0, 6); settingsList.Parent = settingsPage
+local settingsSpacer = Instance.new("Frame"); settingsSpacer.Size = UDim2.new(1, 0, 0, 6); settingsSpacer.BackgroundTransparency = 1; settingsSpacer.Parent = settingsPage
+contentPages["设置"] = settingsPage
+
+local settingsItems = {
+    {type = "color", name = "边框颜色", desc = "切换面板边框颜色（含彩虹）", icon = "🎨", colors = {"金色", "红色", "蓝色", "绿色", "紫色", "粉色", "青色", "白色", "彩虹色"}},
+    {type = "size", name = "面板比例", desc = "切换平板/手机尺寸", icon = "📱", modes = {"平板", "手机"}},
+    {type = "toggle", name = "透视作者", desc = "开启/关闭作者CHANGCHENG66的ESP透视", icon = "👑", code = "authoresp"},
+}
+
+local function createSettingsCard(parent, item)
+    local Card = Instance.new("Frame")
+    Card.Size = UDim2.new(1, -16, 0, 46); Card.Position = UDim2.new(0, 8, 0, 0)
+    Card.BackgroundColor3 = Color3.fromRGB(252, 252, 252); Card.BorderSizePixel = 0; Card.ZIndex = 7; Card.Parent = parent
+    local CardCorner = Instance.new("UICorner"); CardCorner.CornerRadius = UDim.new(0, 10); CardCorner.Parent = Card
+    local CardStroke = Instance.new("UIStroke"); CardStroke.Color = Color3.fromRGB(230, 230, 230); CardStroke.Thickness = 1; CardStroke.Parent = Card
+    
+    local IconFrame = Instance.new("Frame")
+    IconFrame.Size = UDim2.new(0, 26, 0, 26); IconFrame.Position = UDim2.new(0, 10, 0, 10)
+    IconFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240); IconFrame.BorderSizePixel = 0; IconFrame.ZIndex = 8; IconFrame.Parent = Card
+    local IconCorner = Instance.new("UICorner"); IconCorner.CornerRadius = UDim.new(0, 6); IconCorner.Parent = IconFrame
+    local IconText = Instance.new("TextLabel")
+    IconText.Size = UDim2.new(1, 0, 1, 0); IconText.Text = item.icon; IconText.TextSize = 11
+    IconText.BackgroundTransparency = 1; IconText.ZIndex = 9; IconText.Parent = IconFrame
+    
+    local TitleText = Instance.new("TextLabel")
+    TitleText.Size = UDim2.new(0, 160, 0, 15); TitleText.Position = UDim2.new(0, 44, 0, 5)
+    TitleText.Text = item.name; TitleText.TextColor3 = Color3.fromRGB(50, 50, 50)
+    TitleText.Font = Enum.Font.GothamSemibold; TitleText.TextSize = 11
+    TitleText.BackgroundTransparency = 1; TitleText.TextXAlignment = Enum.TextXAlignment.Left; TitleText.ZIndex = 8; TitleText.Parent = Card
+    
+    local DescText = Instance.new("TextLabel")
+    DescText.Size = UDim2.new(1, -140, 0, 13); DescText.Position = UDim2.new(0, 44, 0, 22)
+    DescText.Text = item.desc; DescText.TextColor3 = Color3.fromRGB(130, 130, 130)
+    DescText.Font = Enum.Font.Gotham; DescText.TextSize = 9; DescText.BackgroundTransparency = 1
+    DescText.TextXAlignment = Enum.TextXAlignment.Left; DescText.ZIndex = 8; DescText.Parent = Card
+    
+    if item.type == "color" then
+        local btnGroup = Instance.new("Frame")
+        btnGroup.Size = UDim2.new(0, 170, 0, 26)
+        btnGroup.Position = UDim2.new(1, -180, 0, 10)
+        btnGroup.BackgroundTransparency = 1
+        btnGroup.ZIndex = 9
+        btnGroup.Parent = Card
+        
+        local colorBtns = {}
+        for i, colorName in ipairs(item.colors) do
+            local colorBtn = Instance.new("TextButton")
+            colorBtn.Size = UDim2.new(0, 26, 0, 26)
+            colorBtn.Position = UDim2.new(0, (i-1) * 28, 0, 0)
+            if colorName == "彩虹色" then
+                colorBtn.BackgroundColor3 = Color3.fromRGB(200, 100, 255)
+                local rainbowOverlay = Instance.new("TextLabel")
+                rainbowOverlay.Size = UDim2.new(1, 0, 1, 0)
+                rainbowOverlay.Text = "🌈"
+                rainbowOverlay.TextSize = 14
+                rainbowOverlay.BackgroundTransparency = 1
+                rainbowOverlay.ZIndex = 11
+                rainbowOverlay.Parent = colorBtn
+            else
+                colorBtn.BackgroundColor3 = borderColors[colorName]
+            end
+            colorBtn.BorderSizePixel = 1
+            colorBtn.BorderColor3 = (colorName == currentBorderColor or (colorName == "彩虹色" and isRainbowBorder)) and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+            colorBtn.Text = ""
+            colorBtn.ZIndex = 10
+            colorBtn.AutoButtonColor = false
+            colorBtn.Parent = btnGroup
+            local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(1, 0); corner.Parent = colorBtn
+            
+            colorBtn.MouseButton1Click:Connect(function()
+                setBorderColor(colorName)
+                for _, btn in ipairs(colorBtns) do
+                    btn.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                end
+                colorBtn.BorderColor3 = Color3.fromRGB(255, 255, 255)
+            end)
+            table.insert(colorBtns, colorBtn)
+        end
+        
+    elseif item.type == "size" then
+        local sizeGroup = Instance.new("Frame")
+        sizeGroup.Size = UDim2.new(0, 120, 0, 26)
+        sizeGroup.Position = UDim2.new(1, -130, 0, 10)
+        sizeGroup.BackgroundTransparency = 1
+        sizeGroup.ZIndex = 9
+        sizeGroup.Parent = Card
+        
+        for i, mode in ipairs(item.modes) do
+            local modeBtn = Instance.new("TextButton")
+            modeBtn.Size = UDim2.new(0, 56, 0, 26)
+            modeBtn.Position = UDim2.new(0, (i-1) * 60, 0, 0)
+            modeBtn.Text = mode
+            modeBtn.TextColor3 = mode == panelMode and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(80, 80, 80)
+            modeBtn.Font = Enum.Font.GothamBold
+            modeBtn.TextSize = 10
+            modeBtn.BackgroundColor3 = mode == panelMode and Color3.fromRGB(255, 140, 0) or Color3.fromRGB(230, 230, 230)
+            modeBtn.BorderSizePixel = 0
+            modeBtn.ZIndex = 10
+            modeBtn.AutoButtonColor = false
+            modeBtn.Parent = sizeGroup
+            local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 4); corner.Parent = modeBtn
+            
+            modeBtn.MouseButton1Click:Connect(function()
+                panelMode = mode
+                applyPanelSize()
+                for _, child in ipairs(sizeGroup:GetChildren()) do
+                    if child:IsA("TextButton") then
+                        child.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+                        child.TextColor3 = Color3.fromRGB(80, 80, 80)
+                    end
+                end
+                modeBtn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+                modeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                if isOpen then
+                    MainFrame.Size = MainFrame.Size
+                    MainFrame.Position = MainFrame.Position
+                end
+            end)
+        end
+        
+    elseif item.type == "toggle" then
+        local isOn = false
+        if item.code == "authoresp" then
+            isOn = authorEspEnabled
+        end
+        
+        local Toggle = Instance.new("TextButton")
+        Toggle.Size = UDim2.new(0, 36, 0, 20); Toggle.Position = UDim2.new(1, -46, 0, 13)
+        Toggle.BackgroundColor3 = isOn and Color3.fromRGB(255, 140, 0) or Color3.fromRGB(200, 200, 200)
+        Toggle.Text = ""; Toggle.BorderSizePixel = 0; Toggle.ZIndex = 8; Toggle.AutoButtonColor = false; Toggle.Parent = Card
+        local ToggleCorner = Instance.new("UICorner"); ToggleCorner.CornerRadius = UDim.new(1, 0); ToggleCorner.Parent = Toggle
+        local ToggleKnob = Instance.new("Frame")
+        ToggleKnob.Size = UDim2.new(0, 16, 0, 16)
+        ToggleKnob.Position = isOn and UDim2.new(1, -18, 0, 2) or UDim2.new(0, 2, 0, 2)
+        ToggleKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255); ToggleKnob.BorderSizePixel = 0; ToggleKnob.ZIndex = 9; ToggleKnob.Parent = Toggle
+        local KnobCorner = Instance.new("UICorner"); KnobCorner.CornerRadius = UDim.new(1, 0); KnobCorner.Parent = ToggleKnob
+        
+        Toggle.MouseButton1Click:Connect(function()
+            if item.code == "authoresp" and isOn == true then
+                local confirmGui = Instance.new("ScreenGui")
+                confirmGui.Parent = PlayerGui
+                local bg = Instance.new("Frame")
+                bg.Size = UDim2.new(1, 0, 1, 0)
+                bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+                bg.BackgroundTransparency = 0.5
+                bg.ZIndex = 999
+                bg.Parent = confirmGui
+                
+                local popup = Instance.new("Frame")
+                popup.Size = UDim2.new(0, 320, 0, 180)
+                popup.Position = UDim2.new(0.5, -160, 0.5, -90)
+                popup.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                popup.BorderSizePixel = 0
+                popup.ZIndex = 1000
+                popup.Parent = confirmGui
+                local popupCorner = Instance.new("UICorner")
+                popupCorner.CornerRadius = UDim.new(0, 12)
+                popupCorner.Parent = popup
+                
+                local title = Instance.new("TextLabel")
+                title.Size = UDim2.new(1, 0, 0, 40)
+                title.Position = UDim2.new(0, 0, 0, 10)
+                title.Text = "确认关闭"
+                title.TextColor3 = Color3.fromRGB(255, 255, 255)
+                title.Font = Enum.Font.GothamBold
+                title.TextSize = 18
+                title.BackgroundTransparency = 1
+                title.ZIndex = 1001
+                title.Parent = popup
+                
+                local desc = Instance.new("TextLabel")
+                desc.Size = UDim2.new(1, -20, 0, 40)
+                desc.Position = UDim2.new(0, 10, 0, 50)
+                desc.Text = "二次验证：请输入数字 1 或 2"
+                desc.TextColor3 = Color3.fromRGB(200, 200, 200)
+                desc.Font = Enum.Font.Gotham
+                desc.TextSize = 14
+                desc.BackgroundTransparency = 1
+                desc.ZIndex = 1001
+                desc.Parent = popup
+                
+                local btn1 = Instance.new("TextButton")
+                btn1.Size = UDim2.new(0, 80, 0, 40)
+                btn1.Position = UDim2.new(0.5, -90, 0, 110)
+                btn1.Text = "1"
+                btn1.TextColor3 = Color3.fromRGB(255, 255, 255)
+                btn1.Font = Enum.Font.GothamBold
+                btn1.TextSize = 20
+                btn1.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+                btn1.BorderSizePixel = 0
+                btn1.ZIndex = 1001
+                btn1.AutoButtonColor = false
+                btn1.Parent = popup
+                local btn1Corner = Instance.new("UICorner")
+                btn1Corner.CornerRadius = UDim.new(0, 8)
+                btn1Corner.Parent = btn1
+                
+                local btn2 = Instance.new("TextButton")
+                btn2.Size = UDim2.new(0, 80, 0, 40)
+                btn2.Position = UDim2.new(0.5, 10, 0, 110)
+                btn2.Text = "2"
+                btn2.TextColor3 = Color3.fromRGB(255, 255, 255)
+                btn2.Font = Enum.Font.GothamBold
+                btn2.TextSize = 20
+                btn2.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+                btn2.BorderSizePixel = 0
+                btn2.ZIndex = 1001
+                btn2.AutoButtonColor = false
+                btn2.Parent = popup
+                local btn2Corner = Instance.new("UICorner")
+                btn2Corner.CornerRadius = UDim.new(0, 8)
+                btn2Corner.Parent = btn2
+                
+                local resultLabel = Instance.new("TextLabel")
+                resultLabel.Size = UDim2.new(1, -20, 0, 30)
+                resultLabel.Position = UDim2.new(0, 10, 0, 155)
+                resultLabel.Text = ""
+                resultLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                resultLabel.Font = Enum.Font.Gotham
+                resultLabel.TextSize = 12
+                resultLabel.BackgroundTransparency = 1
+                resultLabel.ZIndex = 1001
+                resultLabel.Parent = popup
+                
+                btn1.MouseButton1Click:Connect(function()
+                    resultLabel.Text = "验证成功，已关闭透视作者"
+                    resultLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+                    isOn = false
+                    Toggle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+                    ToggleKnob:TweenPosition(UDim2.new(0, 2, 0, 2), "Out", "Quad", 0.15)
+                    disableAuthorESP()
+                    wait(0.8)
+                    confirmGui:Destroy()
+                end)
+                
+                btn2.MouseButton1Click:Connect(function()
+                    resultLabel.Text = "验证失败，关闭此功能失败"
+                    resultLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                    wait(0.8)
+                    confirmGui:Destroy()
+                end)
+                
+                return
+            end
+            
+            if item.code == "authoresp" then
+                isOn = not isOn
+                Toggle.BackgroundColor3 = isOn and Color3.fromRGB(255, 140, 0) or Color3.fromRGB(200, 200, 200)
+                ToggleKnob:TweenPosition(isOn and UDim2.new(1, -18, 0, 2) or UDim2.new(0, 2, 0, 2), "Out", "Quad", 0.15)
+                if isOn then
+                    enableAuthorESP()
+                else
+                    disableAuthorESP()
+                end
+            end
+        end)
+    end
+end
+
+for _, item in ipairs(settingsItems) do
+    createSettingsCard(settingsPage, item)
+end
+settingsPage.CanvasSize = UDim2.new(0, 0, 0, #settingsItems * 52 + 12)
+
+-- 打开/关闭动画
 contentPages["公告"].Visible = true
 local isOpen = false
+
 local function openPanel()
     isOpen = true
-    MainFrame.Size = UDim2.new(0, 0, 0, 0); MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     MainFrame.Visible = true
-    TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 580, 0, 440), Position = UDim2.new(0.5, -290, 0.5, -220)}):Play()
+    MainFrame.Size = UDim2.new(0, 0, 0, 0)
+    MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    applyPanelSize()
+    local targetSize = MainFrame.Size
+    local targetPos = MainFrame.Position
+    MainFrame.Size = UDim2.new(0, 0, 0, 0)
+    MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = targetSize, Position = targetPos}):Play()
 end
+
 local function closePanel()
     isOpen = false
     TweenService:Create(MainFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
-    wait(0.15); MainFrame.Visible = false
+    wait(0.15)
+    MainFrame.Visible = false
 end
+
 OpenBtn.MouseButton1Click:Connect(function()
     if isOpen then closePanel() else openPanel() end
 end)
 CloseButton.MouseButton1Click:Connect(function() closePanel() end)
 selectNav(navButtons[1].button, "公告")
-            
+
+print("黑脚本·管理员版 V2.0 已加载完成")
