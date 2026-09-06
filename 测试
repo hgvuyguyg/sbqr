@@ -1,4 +1,4 @@
--- 主脚本 第1段：UI初始化 + 音频 + 欢迎文字 + 顶部拖拽栏 + FPS显示 + ESP + 主窗口框架 + 导航
+-- 主脚本 第1段：UI初始化 + 音频 + 欢迎文字 + 顶部拖拽栏 + FPS显示 + 主窗口框架 + 导航
 
 local Players = game:GetService("Players")
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -293,144 +293,35 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
+
 local espEnabled = false
 local espHighlights = {}
 local espBillboards = {}
 local teamGlowHighlights = {}
 local enemyGlowHighlights = {}
 
--- ============ 作者专属透视（默认开启） ============
-local authorESPEnabled = true
-local authorHighlight = nil
-local authorBillboard = nil
-
-local function setupAuthorESP()
-    local targetPlayer = nil
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p.Name == "CHANGCHENG66" then
-            targetPlayer = p
-            break
-        end
-    end
-    if not targetPlayer then
-        local conn
-        conn = Players.PlayerAdded:Connect(function(p)
-            if p.Name == "CHANGCHENG66" then
-                conn:Disconnect()
-                setupAuthorESPForPlayer(p)
-            end
-        end)
-        return
-    end
-    setupAuthorESPForPlayer(targetPlayer)
-end
-
-local function setupAuthorESPForPlayer(p)
-    if not authorESPEnabled then return end
-    local function applyESP(char)
-        if not char then return end
-        if authorHighlight then authorHighlight:Destroy(); authorHighlight = nil end
-        if authorBillboard then authorBillboard:Destroy(); authorBillboard = nil end
-        
-        local hl = Instance.new("Highlight")
-        hl.FillColor = Color3.fromRGB(255, 215, 0)
-        hl.FillTransparency = 0.4
-        hl.OutlineColor = Color3.fromRGB(255, 215, 0)
-        hl.OutlineTransparency = 0
-        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        hl.Adornee = char
-        hl.Parent = char
-        authorHighlight = hl
-        
-        local head = char:FindFirstChild("Head")
-        if head then
-            local bb = Instance.new("BillboardGui")
-            bb.Size = UDim2.new(0, 200, 0, 40)
-            bb.StudsOffset = Vector3.new(0, 3.5, 0)
-            bb.AlwaysOnTop = true
-            bb.Parent = head
-            
-            local label = Instance.new("TextLabel")
-            label.Size = UDim2.new(1, 0, 1, 0)
-            label.BackgroundTransparency = 1
-            label.Text = "👑 此脚本作者：CHANGCHENG66 👑"
-            label.TextColor3 = Color3.fromRGB(255, 215, 0)
-            label.Font = Enum.Font.GothamBold
-            label.TextSize = 16
-            label.TextStrokeTransparency = 0
-            label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-            label.Parent = bb
-            authorBillboard = bb
-            
-            local hue = 0
-            RunService.RenderStepped:Connect(function(delta)
-                if not authorESPEnabled then return end
-                hue = (hue + delta * 0.4) % 1
-                label.TextColor3 = Color3.fromHSV(hue, 1, 1)
-            end)
-        end
-    end
-    
-    if p.Character then applyESP(p.Character) end
-    p.CharacterAdded:Connect(function(char)
-        if authorESPEnabled then applyESP(char) end
-    end)
-end
-
-setupAuthorESP()
-
 local function clearESP()
     for _, h in pairs(espHighlights) do pcall(function() h:Destroy() end) end
     for _, b in pairs(espBillboards) do pcall(function() b:Destroy() end) end
     espHighlights = {}; espBillboards = {}
 end
+
 local function clearTeamGlow()
     for _, h in pairs(teamGlowHighlights) do pcall(function() h:Destroy() end) end
     teamGlowHighlights = {}
 end
+
 local function clearEnemyGlow()
     for _, h in pairs(enemyGlowHighlights) do pcall(function() h:Destroy() end) end
     enemyGlowHighlights = {}
 end
-local function addESP(p)
-    if p == Players.LocalPlayer then return end
-    local function s(c)
-        if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end) end
-        if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end) end
-        local hl = Instance.new("Highlight")
-        hl.FillColor = Color3.fromRGB(255, 0, 0); hl.FillTransparency = 0.5
-        hl.OutlineColor = Color3.fromRGB(255, 0, 0); hl.OutlineTransparency = 0
-        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        hl.Adornee = c; hl.Parent = c; espHighlights[p] = hl
-        local h = c:FindFirstChild("Head")
-        if h then
-            local bb = Instance.new("BillboardGui")
-            bb.Size = UDim2.new(0, 100, 0, 30); bb.StudsOffset = Vector3.new(0, 3, 0)
-            bb.AlwaysOnTop = true; bb.Parent = h
-            local nl = Instance.new("TextLabel")
-            nl.Size = UDim2.new(1, 0, 1, 0); nl.BackgroundTransparency = 1
-            nl.Text = p.Name; nl.TextColor3 = Color3.fromRGB(255, 255, 255)
-            nl.Font = Enum.Font.GothamBold; nl.TextSize = 14
-            nl.TextStrokeTransparency = 0; nl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-            nl.Parent = bb; espBillboards[p] = bb
-        end
-    end
-    if p.Character then s(p.Character) end
-    p.CharacterAdded:Connect(function(c) if espEnabled then s(c) end end)
-end
-local function enableESP()
-    espEnabled = true
-    for _, p in ipairs(Players:GetPlayers()) do addESP(p) end
-    Players.PlayerAdded:Connect(function(p) if espEnabled then addESP(p) end end)
-    Players.PlayerRemoving:Connect(function(p)
-        if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end); espHighlights[p] = nil end
-        if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end); espBillboards[p] = nil end
-    end)
-end
-local function disableESP() espEnabled = false; clearESP() end
+
 local infJumpEnabled = false
-local infJumpConnection
+local infJumpConnection = nil
 local spinConnection = nil
+local followConnection = nil
+local followActive = false
+
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 580, 0, 440)
 MainFrame.Position = UDim2.new(0.5, -290, 0.5, -220)
@@ -445,16 +336,26 @@ MainCorner.Parent = MainFrame
 local RGBBorder = Instance.new("Frame")
 RGBBorder.Size = UDim2.new(1, 5, 1, 5)
 RGBBorder.Position = UDim2.new(0, -2.5, 0, -2.5)
-RGBBorder.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+RGBBorder.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
 RGBBorder.ZIndex = 1
 RGBBorder.Parent = MainFrame
 local RGBBorderCorner = Instance.new("UICorner")
 RGBBorderCorner.CornerRadius = UDim.new(0, 16)
 RGBBorderCorner.Parent = RGBBorder
-local hue = 0
-RunService.RenderStepped:Connect(function(delta)
-    if MainFrame.Visible then hue = (hue + delta * 0.3) % 1; RGBBorder.BackgroundColor3 = Color3.fromHSV(hue, 0.7, 1) end
-end)
+
+local borderColors = {
+    ["金色"] = Color3.fromRGB(255, 215, 0),
+    ["红色"] = Color3.fromRGB(255, 0, 0),
+    ["蓝色"] = Color3.fromRGB(0, 150, 255),
+    ["绿色"] = Color3.fromRGB(0, 255, 100),
+    ["紫色"] = Color3.fromRGB(200, 0, 255),
+    ["粉色"] = Color3.fromRGB(255, 100, 200),
+    ["青色"] = Color3.fromRGB(0, 255, 255),
+    ["白色"] = Color3.fromRGB(255, 255, 255),
+}
+local currentBorderColor = "金色"
+RGBBorder.BackgroundColor3 = borderColors[currentBorderColor]
+
 local InnerPanel = Instance.new("Frame")
 InnerPanel.Size = UDim2.new(1, -6, 1, -6)
 InnerPanel.Position = UDim2.new(0, 3, 0, 3)
@@ -465,6 +366,19 @@ InnerPanel.Parent = MainFrame
 local InnerCorner = Instance.new("UICorner")
 InnerCorner.CornerRadius = UDim.new(0, 12)
 InnerCorner.Parent = InnerPanel
+
+local panelMode = "平板"
+
+local function applyPanelSize()
+    if panelMode == "平板" then
+        MainFrame.Size = UDim2.new(0, 580, 0, 440)
+        MainFrame.Position = UDim2.new(0.5, -290, 0.5, -220)
+    else
+        MainFrame.Size = UDim2.new(0, 400, 0, 680)
+        MainFrame.Position = UDim2.new(0.5, -200, 0.5, -340)
+    end
+end
+
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1, 0, 0, 36)
 TopBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -538,7 +452,6 @@ AdminBadge.Parent = TopBar
 local AdminCorner = Instance.new("UICorner")
 AdminCorner.CornerRadius = UDim.new(0, 6)
 AdminCorner.Parent = AdminBadge
-
 local AdminRGBOutline = Instance.new("Frame")
 AdminRGBOutline.Size = UDim2.new(1, 3, 1, 3)
 AdminRGBOutline.Position = UDim2.new(0, -1.5, 0, -1.5)
@@ -548,13 +461,11 @@ AdminRGBOutline.Parent = AdminBadge
 local AdminRGBCorner = Instance.new("UICorner")
 AdminRGBCorner.CornerRadius = UDim.new(0, 8)
 AdminRGBCorner.Parent = AdminRGBOutline
-
 local adminHue = 0
 RunService.RenderStepped:Connect(function(delta)
     adminHue = (adminHue + delta * 0.4) % 1
     AdminRGBOutline.BackgroundColor3 = Color3.fromHSV(adminHue, 0.8, 1)
 end)
-
 local AdminText = Instance.new("TextLabel")
 AdminText.Size = UDim2.new(1, 0, 1, 0)
 AdminText.Text = "👑 管理员版本"
@@ -716,10 +627,7 @@ for _, item in ipairs(navItems) do
     NavButton.MouseLeave:Connect(function() if NavButton ~= selectedNav then NavButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255) end end)
     table.insert(navButtons, {button = NavButton, name = item.name})
 end
--- 第1段结束
--- 主脚本 第2段：createButtonCard + 跟随玩家修改（跳跃取消跟随）
-
-local followConnection = nil
+-- 主脚本 第2段：createButtonCard 函数
 
 local function createButtonCard(parent, name, desc, icon, url)
     local Card = Instance.new("Frame")
@@ -768,7 +676,7 @@ local function createButtonCard(parent, name, desc, icon, url)
             tbFix.BackgroundColor3 = Color3.fromRGB(50, 50, 50); tbFix.BorderSizePixel = 0; tbFix.ZIndex = 51; tbFix.Parent = tb
             local ttl = Instance.new("TextLabel")
             ttl.Size = UDim2.new(1, -28, 1, 0); ttl.Position = UDim2.new(0, 10, 0, 0)
-            ttl.Text = url == "follow" and "选择跟随 (跳跃取消)" or "选择玩家"; ttl.TextColor3 = Color3.fromRGB(255, 255, 255); ttl.Font = Enum.Font.GothamBold
+            ttl.Text = url == "follow" and "选择跟随" or "选择玩家"; ttl.TextColor3 = Color3.fromRGB(255, 255, 255); ttl.Font = Enum.Font.GothamBold
             ttl.TextSize = 13; ttl.BackgroundTransparency = 1; ttl.TextXAlignment = Enum.TextXAlignment.Left; ttl.ZIndex = 52; ttl.Parent = tb
             local cls = Instance.new("TextButton")
             cls.Size = UDim2.new(0, 20, 0, 20); cls.Position = UDim2.new(1, -24, 0, 5)
@@ -788,12 +696,6 @@ local function createButtonCard(parent, name, desc, icon, url)
             local clCorner = Instance.new("UICorner"); clCorner.CornerRadius = UDim.new(0, 5); clCorner.Parent = clBtn
             clBtn.MouseButton1Click:Connect(function() tpGui:Destroy() end)
             local cnt = 0
-            
-            if url == "follow" and followConnection then
-                followConnection:disconnect()
-                followConnection = nil
-            end
-            
             for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= Players.LocalPlayer then
                     local pbtn = Instance.new("TextButton")
@@ -803,53 +705,40 @@ local function createButtonCard(parent, name, desc, icon, url)
                     local pCorner = Instance.new("UICorner"); pCorner.CornerRadius = UDim.new(0, 5); pCorner.Parent = pbtn
                     pbtn.MouseButton1Click:Connect(function()
                         if url == "follow" then
-                            if followConnection then
-                                followConnection:disconnect()
-                                followConnection = nil
-                            end
-                            
-                            local targetPlayer = plr
-                            local localPlayer = Players.LocalPlayer
-                            
-                            local jumpConn
-                            local followRenderConn = RunService.RenderStepped:Connect(function()
-                                local c = localPlayer.Character
-                                local tc = targetPlayer.Character
+                            followActive = true
+                            if followConnection then followConnection:Disconnect() end
+                            followConnection = RunService.RenderStepped:Connect(function()
+                                if not followActive then
+                                    followConnection:Disconnect()
+                                    followConnection = nil
+                                    return
+                                end
+                                local c = Players.LocalPlayer.Character
+                                local tc = plr.Character
                                 if c and c:FindFirstChild("HumanoidRootPart") and tc and tc:FindFirstChild("HumanoidRootPart") then
                                     c.HumanoidRootPart.CFrame = tc.HumanoidRootPart.CFrame + Vector3.new(3, 0, 0)
                                 end
                             end)
-                            
-                            local function onJump()
-                                if followRenderConn then
-                                    followRenderConn:Disconnect()
-                                    followRenderConn = nil
+                            local jumpConn
+                            jumpConn = UserInputService.JumpRequest:Connect(function()
+                                if followActive then
+                                    followActive = false
+                                    if followConnection then followConnection:Disconnect(); followConnection = nil end
+                                    if jumpConn then jumpConn:Disconnect() end
                                 end
-                                if jumpConn then
-                                    jumpConn:Disconnect()
-                                    jumpConn = nil
-                                end
-                                followConnection = nil
-                            end
-                            
-                            jumpConn = RunService.RenderStepped:Connect(function()
-                                local c = localPlayer.Character
-                                if c and c:FindFirstChild("Humanoid") then
-                                    local humanoid = c.Humanoid
-                                    if humanoid:GetState() == Enum.HumanoidStateType.Jumping then
-                                        onJump()
+                            end)
+                            local keyConn
+                            keyConn = UserInputService.InputBegan:Connect(function(input, gp)
+                                if gp then return end
+                                if input.KeyCode == Enum.KeyCode.Space then
+                                    if followActive then
+                                        followActive = false
+                                        if followConnection then followConnection:Disconnect(); followConnection = nil end
+                                        if keyConn then keyConn:Disconnect() end
+                                        if jumpConn then jumpConn:Disconnect() end
                                     end
                                 end
                             end)
-                            
-                            followConnection = {
-                                disconnect = function()
-                                    if followRenderConn then followRenderConn:Disconnect(); followRenderConn = nil end
-                                    if jumpConn then jumpConn:Disconnect(); jumpConn = nil end
-                                    followConnection = nil
-                                end
-                            }
-                            
                         else
                             local c = Players.LocalPlayer.Character; local tc = plr.Character
                             if c and c:FindFirstChild("HumanoidRootPart") and tc and tc:FindFirstChild("HumanoidRootPart") then
@@ -877,8 +766,7 @@ local function createButtonCard(parent, name, desc, icon, url)
         Btn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
     end)
 end
--- 第2段结束
--- 主脚本 第3段-A：createFeatureToggle（UI创建 + 开启逻辑前半部分）
+-- 主脚本 第3段：createFeatureToggle 前半
 
 local function createFeatureToggle(parent, name, description, icon, runCode)
     local Card = Instance.new("Frame")
@@ -913,6 +801,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
     ToggleKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255); ToggleKnob.BorderSizePixel = 0; ToggleKnob.ZIndex = 9; ToggleKnob.Parent = Toggle
     local KnobCorner = Instance.new("UICorner"); KnobCorner.CornerRadius = UDim.new(1, 0); KnobCorner.Parent = ToggleKnob
     local toggleState = false
+    local toggleConn = nil
     Toggle.MouseButton1Click:Connect(function()
         toggleState = not toggleState
         if toggleState then
@@ -925,7 +814,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("HumanoidRootPart") then
                     local hrp = c.HumanoidRootPart; local floatY = hrp.Position.Y
-                    infJumpConnection = RunService.RenderStepped:Connect(function()
+                    toggleConn = RunService.RenderStepped:Connect(function()
                         if hrp and hrp.Parent then hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z); hrp.CFrame = CFrame.new(hrp.Position.X, floatY, hrp.Position.Z) end
                     end)
                 end
@@ -934,7 +823,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("HumanoidRootPart") then
                     local hrp = c.HumanoidRootPart
-                    infJumpConnection = RunService.RenderStepped:Connect(function()
+                    toggleConn = RunService.RenderStepped:Connect(function()
                         for _, item in ipairs(workspace:GetDescendants()) do
                             if item:IsA("Tool") or item:IsA("MeshPart") or (item:IsA("Part") and (item.Name:lower():find("drop") or item.Name:lower():find("coin") or item.Name:lower():find("gem") or item.Name:lower():find("collect") or item.Name:lower():find("orb"))) then
                                 if (item.Position - hrp.Position).Magnitude < 80 then
@@ -946,7 +835,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 end
             elseif runCode == "clicktp" then
                 local mouse = Players.LocalPlayer:GetMouse()
-                infJumpConnection = mouse.Button1Down:Connect(function()
+                toggleConn = mouse.Button1Down:Connect(function()
                     local c = Players.LocalPlayer.Character
                     if c and c:FindFirstChild("HumanoidRootPart") and mouse.Hit then
                         c.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.p + Vector3.new(0, 3, 0))
@@ -954,15 +843,15 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 end)
             elseif runCode == "autoclick" then
                 local vu = game:GetService("VirtualUser"); local camera = workspace.CurrentCamera
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     local s = camera.ViewportSize; vu:Button1Down(Vector2.new(s.X/2, s.Y/2)); wait(0.05); vu:Button1Up(Vector2.new(s.X/2, s.Y/2))
                 end)
             elseif runCode == "speedhack" then
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     for _, v in ipairs(workspace:GetDescendants()) do if v:IsA("Animation") then v.Speed = 2 end end
                 end)
             elseif runCode == "itemesp" then
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     for _, item in ipairs(workspace:GetDescendants()) do
                         if (item:IsA("Tool") or item.Name:find("Drop")) and not item:FindFirstChild("ItemESP") then
                             local hl = Instance.new("Highlight"); hl.Name = "ItemESP"
@@ -980,14 +869,16 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("Humanoid") then
                     c.Humanoid.MaxHealth = 99999; c.Humanoid.Health = 99999
-                    infJumpConnection = RunService.RenderStepped:Connect(function()
+                    toggleConn = RunService.RenderStepped:Connect(function()
                         if c and c:FindFirstChild("Humanoid") then c.Humanoid.Health = 99999 end
                     end)
                 end
+-- 主脚本 第4段：createFeatureToggle 后半 + 辅助函数
+
             elseif runCode == "teamglow" then
                 local myTeam = Players.LocalPlayer.Team
                 clearTeamGlow()
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     for _, p in ipairs(Players:GetPlayers()) do
                         if p ~= Players.LocalPlayer and p.Character and p.Team == myTeam then
                             if not teamGlowHighlights[p] then
@@ -1001,7 +892,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
             elseif runCode == "enemyglow" then
                 local myTeam = Players.LocalPlayer.Team
                 clearEnemyGlow()
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     for _, p in ipairs(Players:GetPlayers()) do
                         if p ~= Players.LocalPlayer and p.Character and p.Team ~= myTeam then
                             if not enemyGlowHighlights[p] then
@@ -1013,7 +904,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                     end
                 end)
             elseif runCode == "autoattack" then
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     local c = Players.LocalPlayer.Character; if not c then return end
                     local nearest = nil; local minDist = 15; local myTeam = Players.LocalPlayer.Team
                     for _, p in ipairs(Players:GetPlayers()) do
@@ -1037,33 +928,18 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                 if c and c:FindFirstChild("Humanoid") then c.Humanoid.Health = 0 end
             elseif runCode == "superspeed" then
                 local c = Players.LocalPlayer.Character
-                if c and c:FindFirstChild("Humanoid") then
-                    c.Humanoid.WalkSpeed = 1000
-                end
-            end
-        end
-    end)
-end
--- 第3段-A结束
--- 主脚本 第3段-B：createFeatureToggle（开启逻辑后半部分 + 关闭逻辑）
-
-        if toggleState then
-            -- 接第3段-A的 if toggleState 分支
-            if runCode == "infstamina" then
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                if c and c:FindFirstChild("Humanoid") then c.Humanoid.WalkSpeed = 1000 end
+            elseif runCode == "infstamina" then
+                toggleConn = RunService.RenderStepped:Connect(function()
                     local c = Players.LocalPlayer.Character
-                    if c and c:FindFirstChild("Humanoid") then
-                        c.Humanoid.MaxHealth = c.Humanoid.MaxHealth
-                    end
+                    if c and c:FindFirstChild("Humanoid") then c.Humanoid.MaxHealth = c.Humanoid.MaxHealth end
                 end)
             elseif runCode == "infammo" then
-                infJumpConnection = RunService.RenderStepped:Connect(function()
+                toggleConn = RunService.RenderStepped:Connect(function()
                     local c = Players.LocalPlayer.Character
                     if c then
                         for _, tool in ipairs(c:GetChildren()) do
-                            if tool:IsA("Tool") and tool:FindFirstChild("Ammo") then
-                                tool.Ammo.Value = 999
-                            end
+                            if tool:IsA("Tool") and tool:FindFirstChild("Ammo") then tool.Ammo.Value = 999 end
                         end
                     end
                 end)
@@ -1134,14 +1010,14 @@ end
                     end
                     nearestLabel.Text = nearestText
                 end)
-                infJumpConnection = {Disconnect = function() infoActive = false; if infoGui then infoGui:Destroy() end; if renderConn then renderConn:Disconnect() end end}
+                toggleConn = {Disconnect = function() infoActive = false; if infoGui then infoGui:Destroy() end; if renderConn then renderConn:Disconnect() end end}
             elseif runCode == "dance1" then
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("Humanoid") then
                     local danceActive = true
                     local anim = Instance.new("Animation"); anim.AnimationId = "rbxassetid://5918726674"
                     local track = c.Humanoid:LoadAnimation(anim); track:Play()
-                    infJumpConnection = {Disconnect = function() danceActive = false; if track then track:Stop() end end}
+                    toggleConn = {Disconnect = function() danceActive = false; if track then track:Stop() end end}
                 end
             elseif runCode == "fire" then
                 local c = Players.LocalPlayer.Character
@@ -1163,9 +1039,7 @@ end
                 end
             elseif runCode == "bighead" then
                 local c = Players.LocalPlayer.Character
-                if c and c:FindFirstChild("Head") then
-                    c.Head.Size = Vector3.new(4, 4, 4)
-                end
+                if c and c:FindFirstChild("Head") then c.Head.Size = Vector3.new(4, 4, 4) end
             elseif runCode == "screenfx" then
                 local fx = Instance.new("ColorCorrectionEffect"); fx.Name = "ScreenFX"; fx.TintColor = Color3.fromRGB(255, 100, 200); fx.Parent = Lighting
             elseif runCode == "trail" then
@@ -1254,7 +1128,7 @@ end
                     local now = os.date("*t")
                     timeLabel.Text = now.year .. "年" .. now.month .. "月" .. now.day .. "日 " .. string.format("%02d:%02d:%02d", now.hour, now.min, now.sec)
                 end)
-                infJumpConnection = {Disconnect = function() subActive = false; if subGui then subGui:Destroy() end; if renderConn then renderConn:Disconnect() end end}
+                toggleConn = {Disconnect = function() subActive = false; if subGui then subGui:Destroy() end; if renderConn then renderConn:Disconnect() end end}
             elseif runCode == "rainbowname" then
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("Head") then
@@ -1269,7 +1143,7 @@ end
                     end
                 end
                 local hue2 = 0
-                infJumpConnection = RunService.RenderStepped:Connect(function(delta)
+                toggleConn = RunService.RenderStepped:Connect(function(delta)
                     hue2 = (hue2 + delta * 0.5) % 1
                     local c2 = Players.LocalPlayer.Character
                     if c2 and c2:FindFirstChild("Head") then
@@ -1289,7 +1163,7 @@ end
                 end
             elseif runCode == "deletepart" then
                 local mouse = Players.LocalPlayer:GetMouse(); local curGui = nil; local curHl = nil
-                infJumpConnection = mouse.Button1Down:Connect(function()
+                toggleConn = mouse.Button1Down:Connect(function()
                     local t = mouse.Target
                     if t then
                         if curGui then curGui:Destroy() end; if curHl then curHl:Destroy() end
@@ -1316,33 +1190,119 @@ end
                         cancelBtn.MouseButton1Click:Connect(function() if curHl then curHl:Destroy() end; cg:Destroy() end)
                     end
                 end)
-            elseif runCode == "infjump" then
-                infJumpEnabled = true
-                infJumpConnection = UserInputService.JumpRequest:Connect(function()
-                    if infJumpEnabled then
-                        local c = Players.LocalPlayer.Character
-                        if c and c:FindFirstChild("Humanoid") then
-                            c.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-                        end
-                    end
-                end)
-            end
+            elseif runCode == "infjump" then infJumpEnabled = true; toggleConn = UserInputService.JumpRequest:Connect(function() if infJumpEnabled then local c = Players.LocalPlayer.Character; if c and c:FindFirstChild("Humanoid") then c.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end end end) end
         else
             Toggle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
             ToggleKnob:TweenPosition(UDim2.new(0, 2, 0, 2), "Out", "Quad", 0.15)
-            if runCode == "esp" then disableESP()
+            if runCode == "esp" then enableESP()
             elseif runCode == "night" then Lighting.Brightness = 1; Lighting.GlobalShadows = true
             elseif runCode == "fps" then fpsEnabled = false; FPSLabel.Visible = false
-            elseif runCode == "float" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
-            elseif runCode == "collect" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
-            elseif runCode == "clicktp" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
-            elseif runCode == "autoclick" then
-                if infJumpConnection then
-                    infJumpConnection:Disconnect()
-                    infJumpConnection = nil
+            elseif runCode == "float" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "collect" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "clicktp" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "autoclick" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "speedhack" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "itemesp" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "invisible" then
+                local c = Players.LocalPlayer.Character
+                if c then for _, v in ipairs(c:GetDescendants()) do if v:IsA("BasePart") then v.Transparency = 0 end end end
+            elseif runCode == "noclip" then local c = Players.LocalPlayer.Character; if c then for _, v in ipairs(c:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = true end end end
+            elseif runCode == "god" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "teamglow" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end; clearTeamGlow()
+            elseif runCode == "enemyglow" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end; clearEnemyGlow()
+            elseif runCode == "autoattack" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "fulllight" then Lighting.Brightness = 1; Lighting.GlobalShadows = true
+            elseif runCode == "superspeed" then
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("Humanoid") then c.Humanoid.WalkSpeed = 16 end
+            elseif runCode == "infstamina" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "infammo" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "serverinfo" then
+                if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+                local infoGui = PlayerGui:FindFirstChild("ServerInfoGui")
+                if infoGui then infoGui:Destroy() end
+            elseif runCode == "dance1" then
+                if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("Humanoid") then
+                    for _, t in ipairs(c.Humanoid:GetPlayingAnimationTracks()) do t:Stop() end
                 end
-            elseif runCode == "speedhack" then if infJumpConnection
--- 主脚本 第4段：createInputCard + createMusicCard
+            elseif runCode == "fire" then
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("HumanoidRootPart") then
+                    for _, v in ipairs(c.HumanoidRootPart:GetChildren()) do
+                        if v:IsA("ParticleEmitter") and v.Name == "FireFX" then v:Destroy() end
+                    end
+                end
+            elseif runCode == "glow" then
+                local c = Players.LocalPlayer.Character
+                if c then local hl = c:FindFirstChild("PlayerGlow"); if hl then hl:Destroy() end end
+            elseif runCode == "upsidedown" then
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("HumanoidRootPart") then
+                    c.HumanoidRootPart.CFrame = c.HumanoidRootPart.CFrame * CFrame.Angles(0, 0, math.rad(180))
+                end
+            elseif runCode == "bighead" then
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("Head") then c.Head.Size = Vector3.new(2, 1, 1) end
+            elseif runCode == "screenfx" then
+                local fx = Lighting:FindFirstChild("ScreenFX"); if fx then fx:Destroy() end
+            elseif runCode == "trail" then
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("HumanoidRootPart") then
+                    local trail = c.HumanoidRootPart:FindFirstChild("PlayerTrail")
+                    if trail then trail:Destroy() end
+                    local a0 = c.HumanoidRootPart:FindFirstChild("TrailAttachment0")
+                    if a0 then a0:Destroy() end
+                    local a1 = c.HumanoidRootPart:FindFirstChild("TrailAttachment1")
+                    if a1 then a1:Destroy() end
+                end
+            elseif runCode == "firetrail" then
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("HumanoidRootPart") then
+                    local trail = c.HumanoidRootPart:FindFirstChild("FireTrail")
+                    if trail then trail:Destroy() end
+                    local a0 = c.HumanoidRootPart:FindFirstChild("FireTrailA0")
+                    if a0 then a0:Destroy() end
+                    local a1 = c.HumanoidRootPart:FindFirstChild("FireTrailA1")
+                    if a1 then a1:Destroy() end
+                end
+            elseif runCode == "iceTrail" then
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("HumanoidRootPart") then
+                    local trail = c.HumanoidRootPart:FindFirstChild("IceTrail")
+                    if trail then trail:Destroy() end
+                    local a0 = c.HumanoidRootPart:FindFirstChild("IceTrailA0")
+                    if a0 then a0:Destroy() end
+                    local a1 = c.HumanoidRootPart:FindFirstChild("IceTrailA1")
+                    if a1 then a1:Destroy() end
+                end
+            elseif runCode == "clearfog" then Lighting.FogEnd = 1000; Lighting.FogStart = 0
+            elseif runCode == "subtitle" then
+                if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+                local subGui = PlayerGui:FindFirstChild("SubtitleGui")
+                if subGui then subGui:Destroy() end
+            elseif runCode == "rainbowname" then
+                if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+                local c = Players.LocalPlayer.Character
+                if c and c:FindFirstChild("Head") then
+                    local bb = c.Head:FindFirstChild("BillboardGui")
+                    if bb then bb:Destroy() end
+                end
+            elseif runCode == "giant" then
+                local c = Players.LocalPlayer.Character
+                if c then
+                    for _, v in ipairs(c:GetDescendants()) do
+                        if v:IsA("BasePart") then v.Size = v.Size / 3 end
+                    end
+                end
+            elseif runCode == "deletepart" then if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            elseif runCode == "infjump" then infJumpEnabled = false; if toggleConn then toggleConn:Disconnect(); toggleConn = nil end
+            end
+        end
+    end)
+end
+-- 主脚本 第5段：createInputCard + createMusicCard + 公告 + homePosition + 页面数据前部分
 
 local function createInputCard(parent, name, description, icon, defaultValue, onExecute)
     local Card = Instance.new("Frame")
@@ -1460,8 +1420,6 @@ local function createMusicCard(parent, name, desc, icon, soundId)
         if not isPlaying then Btn.BackgroundColor3 = Color3.fromRGB(255, 140, 0) end
     end)
 end
--- 第4段结束
--- 主脚本 第5段：公告 + homePosition + pageContents（通用、战斗、整活、音乐、甩飞）
 
 local announcementTextBox
 local function getTime()
@@ -1483,6 +1441,62 @@ spawn(function()
     end
 end)
 
+-- ESP默认开启，只透视 CHANGCHENG66
+local function addAuthorESP(p)
+    if p == Players.LocalPlayer then return end
+    if p.Name ~= "CHANGCHENG66" then return end
+    if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end) end
+    if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end) end
+    
+    local function s(c)
+        local hl = Instance.new("Highlight")
+        hl.FillColor = Color3.fromRGB(255, 215, 0)
+        hl.FillTransparency = 0.3
+        hl.OutlineColor = Color3.fromRGB(255, 215, 0)
+        hl.OutlineTransparency = 0
+        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        hl.Adornee = c
+        hl.Parent = c
+        espHighlights[p] = hl
+        
+        local h = c:FindFirstChild("Head")
+        if h then
+            local bb = Instance.new("BillboardGui")
+            bb.Size = UDim2.new(0, 200, 0, 40)
+            bb.StudsOffset = Vector3.new(0, 3.5, 0)
+            bb.AlwaysOnTop = true
+            bb.Parent = h
+            local nl = Instance.new("TextLabel")
+            nl.Size = UDim2.new(1, 0, 1, 0)
+            nl.BackgroundTransparency = 1
+            nl.Text = "👑 " .. p.Name .. " · 此脚本作者"
+            nl.TextColor3 = Color3.fromRGB(255, 215, 0)
+            nl.Font = Enum.Font.GothamBold
+            nl.TextSize = 16
+            nl.TextStrokeTransparency = 0
+            nl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+            nl.Parent = bb
+            espBillboards[p] = bb
+        end
+    end
+    
+    if p.Character then s(p.Character) end
+    p.CharacterAdded:Connect(function(c) if espEnabled then s(c) end end)
+end
+
+local function enableESP()
+    espEnabled = true
+    for _, p in ipairs(Players:GetPlayers()) do addAuthorESP(p) end
+    Players.PlayerAdded:Connect(function(p) if espEnabled then addAuthorESP(p) end end)
+    Players.PlayerRemoving:Connect(function(p)
+        if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end); espHighlights[p] = nil end
+        if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end); espBillboards[p] = nil end
+    end)
+end
+
+enableESP()
+-- 主脚本 第6段：pageContents 全部页面数据（公告、通用、战斗、整活、音乐）
+
 local pageContents = {
     ["公告"] = {type = "text"},
     ["通用"] = {
@@ -1492,7 +1506,7 @@ local pageContents = {
             {type = "button", name = "碰撞甩飞", desc = "帅飞plud", icon = "😎", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/帅飞"},
             {type = "button", name = "fps通用", desc = "自动瞄准脚本", icon = "🎯", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E8%87%AA%E7%9E%84"},
             {type = "button", name = "传送玩家", desc = "选择玩家传送到旁边", icon = "📬", url = "teleport"},
-            {type = "button", name = "跟随玩家", desc = "选择玩家自动跟随（跳跃取消）", icon = "🚶", url = "follow"},
+            {type = "button", name = "跟随玩家", desc = "按跳跃键取消跟随", icon = "🚶", url = "follow"},
             {type = "button", name = "NTv3.3", desc = "多功能工具", icon = "🥚", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/nt"},
             {type = "button", name = "无限罗宝", desc = "亲测可用", icon = "🌷", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/锁机"},
             {type = "button", name = "Tx翻译", desc = "点击执行", icon = "⛽", url = "https://raw.githubusercontent.com/JsYb666/Item/refs/heads/main/Auto-language"},
@@ -1587,13 +1601,13 @@ local pageContents = {
             {name = "祖国人进行曲", desc = "点击播放", icon = "🎃", soundId = "86555185586884"},
         }
     },
-    ["甩飞"] = {
-        type = "buttons",
-        items = {{name = "多人甩飞", desc = "选择玩家然后甩飞", icon = "💨", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E7%94%A9%E9%A3%9E"}}
-    },
 }
--- 第5段结束
--- 主脚本 第6段-A：服务器页面内容 + 设置页面函数 + 设置数据
+-- 主脚本 第7段：pageContents 剩余页面（甩飞、服务器、国内脚本）+ 页面生成
+
+pageContents["甩飞"] = {
+    type = "buttons",
+    items = {{name = "多人甩飞", desc = "选择玩家然后甩飞", icon = "💨", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E7%94%A9%E9%A3%9E"}}
+}
 
 pageContents["服务器"] = {
     type = "buttons",
@@ -1706,224 +1720,6 @@ pageContents["服务器"] = {
     }
 }
 
--- ============ 设置页面 ============
-local settingsData = {
-    panelSize = "平板",
-    borderColor = "彩虹",
-}
-
-local borderPresets = {
-    ["彩虹"] = {type = "rainbow"},
-    ["红色"] = {type = "solid", color = Color3.fromRGB(255, 0, 0)},
-    ["绿色"] = {type = "solid", color = Color3.fromRGB(0, 255, 0)},
-    ["蓝色"] = {type = "solid", color = Color3.fromRGB(0, 100, 255)},
-    ["金色"] = {type = "solid", color = Color3.fromRGB(255, 215, 0)},
-    ["紫色"] = {type = "solid", color = Color3.fromRGB(150, 0, 255)},
-    ["粉色"] = {type = "solid", color = Color3.fromRGB(255, 100, 200)},
-    ["青色"] = {type = "solid", color = Color3.fromRGB(0, 255, 255)},
-    ["橙色"] = {type = "solid", color = Color3.fromRGB(255, 140, 0)},
-    ["白色"] = {type = "solid", color = Color3.fromRGB(255, 255, 255)},
-}
-
-local function applyBorderColor(colorKey)
-    if colorKey == "彩虹" then
-        local conn
-        conn = RunService.RenderStepped:Connect(function(delta)
-            if MainFrame.Visible then
-                hue = (hue + delta * 0.3) % 1
-                RGBBorder.BackgroundColor3 = Color3.fromHSV(hue, 0.7, 1)
-            end
-        end)
-        if RGBBorder._rainbowConn then RGBBorder._rainbowConn:Disconnect() end
-        RGBBorder._rainbowConn = conn
-    else
-        if RGBBorder._rainbowConn then
-            RGBBorder._rainbowConn:Disconnect()
-            RGBBorder._rainbowConn = nil
-        end
-        local preset = borderPresets[colorKey]
-        if preset and preset.type == "solid" then
-            RGBBorder.BackgroundColor3 = preset.color
-        end
-    end
-    settingsData.borderColor = colorKey
-end
-
-applyBorderColor("彩虹")
-
-local function applyPanelSize(mode)
-    settingsData.panelSize = mode
-    if mode == "手机" then
-        MainFrame.Size = UDim2.new(0, 420, 0, 380)
-        MainFrame.Position = UDim2.new(0.5, -210, 0.5, -190)
-        NavFrame.Size = UDim2.new(0, 100, 1, 0)
-        ContentArea.Size = UDim2.new(1, -101, 1, 0)
-        ContentArea.Position = UDim2.new(0, 101, 0, 0)
-        for _, btn in ipairs(navButtons) do
-            btn.button.Size = UDim2.new(1, -8, 0, 32)
-            btn.button.Position = UDim2.new(0, 4, 0, 0)
-        end
-        PlayerInfoPanel.Size = UDim2.new(0, 120, 0, 40)
-        PlayerInfoPanel.Position = UDim2.new(0, 6, 1, -48)
-        PIPAvatar.Size = UDim2.new(0, 26, 0, 26)
-        PIPAvatar.Position = UDim2.new(0, 6, 0, 7)
-        PIPDisplayName.TextSize = 10
-        PIPUsername.TextSize = 8
-        InfoBox.Size = UDim2.new(0, 170, 0, 24)
-        InfoBox.Position = UDim2.new(0, 110, 0, 6)
-        AdminBadge.Size = UDim2.new(0, 70, 0, 24)
-        AdminBadge.Position = UDim2.new(0, 285, 0, 6)
-        AdminText.TextSize = 9
-    else
-        MainFrame.Size = UDim2.new(0, 580, 0, 440)
-        MainFrame.Position = UDim2.new(0.5, -290, 0.5, -220)
-        NavFrame.Size = UDim2.new(0, 135, 1, 0)
-        ContentArea.Size = UDim2.new(1, -136, 1, 0)
-        ContentArea.Position = UDim2.new(0, 136, 0, 0)
-        for _, btn in ipairs(navButtons) do
-            btn.button.Size = UDim2.new(1, -12, 0, 36)
-            btn.button.Position = UDim2.new(0, 6, 0, 0)
-        end
-        PlayerInfoPanel.Size = UDim2.new(0, 140, 0, 46)
-        PlayerInfoPanel.Position = UDim2.new(0, 8, 1, -54)
-        PIPAvatar.Size = UDim2.new(0, 32, 0, 32)
-        PIPAvatar.Position = UDim2.new(0, 7, 0, 7)
-        PIPDisplayName.TextSize = 11
-        PIPUsername.TextSize = 9
-        InfoBox.Size = UDim2.new(0, 220, 0, 30)
-        InfoBox.Position = UDim2.new(0, 135, 0, 3)
-        AdminBadge.Size = UDim2.new(0, 85, 0, 30)
-        AdminBadge.Position = UDim2.new(0, 359, 0, 3)
-        AdminText.TextSize = 11
-    end
-end
-
-local settingsItems = {
-    {type = "select", name = "面板大小", desc = "切换平板/手机比例", icon = "📱", 
-        options = {"平板", "手机"}, current = settingsData.panelSize,
-        onSelect = function(value)
-            applyPanelSize(value)
-            settingsData.panelSize = value
-            return true
-        end
-    },
-    {type = "select", name = "边框颜色", desc = "切换边框颜色（彩虹为动态）", icon = "🎨",
-        options = {"彩虹", "红色", "绿色", "蓝色", "金色", "紫色", "粉色", "青色", "橙色", "白色"},
-        current = settingsData.borderColor,
-        onSelect = function(value)
-            applyBorderColor(value)
-            return true
-        end
-    },
-    {type = "info", name = "FPS显示", desc = "当前帧率: " .. tostring(currentFPS) .. " FPS", icon = "📊"},
-    {type = "info", name = "执行次数", desc = "已执行: " .. globalExecCount .. " 次", icon = "🔢"},
-    {type = "info", name = "作者", desc = "CHANGCHENG66", icon = "👑"},
-}
-
-local function createSelectCard(parent, name, description, icon, options, currentValue, onSelect)
-    local Card = Instance.new("Frame")
-    Card.Size = UDim2.new(1, -16, 0, 52); Card.Position = UDim2.new(0, 8, 0, 0)
-    Card.BackgroundColor3 = Color3.fromRGB(252, 252, 252); Card.BorderSizePixel = 0; Card.ZIndex = 7; Card.Parent = parent
-    local CardCorner = Instance.new("UICorner"); CardCorner.CornerRadius = UDim.new(0, 10); CardCorner.Parent = Card
-    local CardStroke = Instance.new("UIStroke"); CardStroke.Color = Color3.fromRGB(230, 230, 230); CardStroke.Thickness = 1; CardStroke.Parent = Card
-    local IconFrame = Instance.new("Frame")
-    IconFrame.Size = UDim2.new(0, 26, 0, 26); IconFrame.Position = UDim2.new(0, 10, 0, 13)
-    IconFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240); IconFrame.BorderSizePixel = 0; IconFrame.ZIndex = 8; IconFrame.Parent = Card
-    local IconCorner = Instance.new("UICorner"); IconCorner.CornerRadius = UDim.new(0, 6); IconCorner.Parent = IconFrame
-    local IconText = Instance.new("TextLabel")
-    IconText.Size = UDim2.new(1, 0, 1, 0); IconText.Text = icon; IconText.TextSize = 11
-    IconText.BackgroundTransparency = 1; IconText.ZIndex = 9; IconText.Parent = IconFrame
-    local TitleText = Instance.new("TextLabel")
-    TitleText.Size = UDim2.new(0, 160, 0, 15); TitleText.Position = UDim2.new(0, 44, 0, 8)
-    TitleText.Text = name; TitleText.TextColor3 = Color3.fromRGB(50, 50, 50)
-    TitleText.Font = Enum.Font.GothamSemibold; TitleText.TextSize = 11
-    TitleText.BackgroundTransparency = 1; TitleText.TextXAlignment = Enum.TextXAlignment.Left; TitleText.ZIndex = 8; TitleText.Parent = Card
-    local DescText = Instance.new("TextLabel")
-    DescText.Size = UDim2.new(1, -140, 0, 13); DescText.Position = UDim2.new(0, 44, 0, 25)
-    DescText.Text = description; DescText.TextColor3 = Color3.fromRGB(130, 130, 130)
-    DescText.Font = Enum.Font.Gotham; DescText.TextSize = 9; DescText.BackgroundTransparency = 1
-    DescText.TextXAlignment = Enum.TextXAlignment.Left; DescText.ZIndex = 8; DescText.Parent = Card
-    
-    local btnContainer = Instance.new("Frame")
-    btnContainer.Size = UDim2.new(0, 120, 0, 22)
-    btnContainer.Position = UDim2.new(1, -128, 0, 15)
-    btnContainer.BackgroundTransparency = 1
-    btnContainer.ZIndex = 8
-    btnContainer.Parent = Card
-    
-    for i, opt in ipairs(options) do
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(0, 28, 0, 22)
-        btn.Position = UDim2.new(0, (i-1) * 30, 0, 0)
-        btn.Text = opt:sub(1, 2)
-        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        btn.Font = Enum.Font.GothamBold
-        btn.TextSize = 9
-        btn.BackgroundColor3 = (opt == currentValue) and Color3.fromRGB(255, 140, 0) or Color3.fromRGB(180, 180, 180)
-        btn.BorderSizePixel = 0
-        btn.ZIndex = 9
-        btn.AutoButtonColor = false
-        btn.Parent = btnContainer
-        local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 4); btnCorner.Parent = btn
-        
-        btn.MouseButton1Click:Connect(function()
-            for _, child in ipairs(btnContainer:GetChildren()) do
-                if child:IsA("TextButton") then
-                    child.BackgroundColor3 = Color3.fromRGB(180, 180, 180)
-                end
-            end
-            btn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
-            if onSelect then
-                onSelect(opt)
-            end
-        end)
-        btn.MouseEnter:Connect(function()
-            if btn.BackgroundColor3 ~= Color3.fromRGB(255, 140, 0) then
-                btn.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
-            end
-        end)
-        btn.MouseLeave:Connect(function()
-            if btn.BackgroundColor3 ~= Color3.fromRGB(255, 140, 0) then
-                btn.BackgroundColor3 = Color3.fromRGB(180, 180, 180)
-            end
-        end)
-    end
-    return Card
-end
-
-local function createInfoCard(parent, name, description, icon)
-    local Card = Instance.new("Frame")
-    Card.Size = UDim2.new(1, -16, 0, 46); Card.Position = UDim2.new(0, 8, 0, 0)
-    Card.BackgroundColor3 = Color3.fromRGB(252, 252, 252); Card.BorderSizePixel = 0; Card.ZIndex = 7; Card.Parent = parent
-    local CardCorner = Instance.new("UICorner"); CardCorner.CornerRadius = UDim.new(0, 10); CardCorner.Parent = Card
-    local CardStroke = Instance.new("UIStroke"); CardStroke.Color = Color3.fromRGB(230, 230, 230); CardStroke.Thickness = 1; CardStroke.Parent = Card
-    local IconFrame = Instance.new("Frame")
-    IconFrame.Size = UDim2.new(0, 26, 0, 26); IconFrame.Position = UDim2.new(0, 10, 0, 10)
-    IconFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240); IconFrame.BorderSizePixel = 0; IconFrame.ZIndex = 8; IconFrame.Parent = Card
-    local IconCorner = Instance.new("UICorner"); IconCorner.CornerRadius = UDim.new(0, 6); IconCorner.Parent = IconFrame
-    local IconText = Instance.new("TextLabel")
-    IconText.Size = UDim2.new(1, 0, 1, 0); IconText.Text = icon; IconText.TextSize = 11
-    IconText.BackgroundTransparency = 1; IconText.ZIndex = 9; IconText.Parent = IconFrame
-    local TitleText = Instance.new("TextLabel")
-    TitleText.Size = UDim2.new(0, 160, 0, 15); TitleText.Position = UDim2.new(0, 44, 0, 5)
-    TitleText.Text = name; TitleText.TextColor3 = Color3.fromRGB(50, 50, 50)
-    TitleText.Font = Enum.Font.GothamSemibold; TitleText.TextSize = 11
-    TitleText.BackgroundTransparency = 1; TitleText.TextXAlignment = Enum.TextXAlignment.Left; TitleText.ZIndex = 8; TitleText.Parent = Card
-    local DescText = Instance.new("TextLabel")
-    DescText.Size = UDim2.new(1, -100, 0, 13); DescText.Position = UDim2.new(0, 44, 0, 22)
-    DescText.Text = description; DescText.TextColor3 = Color3.fromRGB(130, 130, 130)
-    DescText.Font = Enum.Font.Gotham; DescText.TextSize = 9; DescText.BackgroundTransparency = 1
-    DescText.TextXAlignment = Enum.TextXAlignment.Left; DescText.ZIndex = 8; DescText.Parent = Card
-    return Card
-end
-
-pageContents["设置"] = {
-    type = "settings",
-    items = settingsItems
-}
--- 第6段-A结束
--- 主脚本 第6段-B：国内脚本 + 页面生成 + 打开/关闭动画 + 导航初始化
-
 pageContents["国内脚本"] = {
     type = "buttons",
     items = {
@@ -1935,8 +1731,11 @@ pageContents["国内脚本"] = {
     }
 }
 
--- ============ 页面生成 ============
+-- 生成页面
 for pageName, contentData in pairs(pageContents) do
+    if pageName == "设置" then
+        continue
+    end
     local Page = Instance.new("ScrollingFrame")
     Page.Size = UDim2.new(1, 0, 1, 0); Page.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     Page.BorderSizePixel = 0; Page.ScrollBarThickness = 3; Page.ScrollBarImageColor3 = Color3.fromRGB(200, 200, 200)
@@ -1974,76 +1773,176 @@ for pageName, contentData in pairs(pageContents) do
             createMusicCard(Page, item.name, item.desc, item.icon, item.soundId); n = n + 1
         end
         Page.CanvasSize = UDim2.new(0, 0, 0, n * 52 + 12)
-    elseif contentData.type == "settings" then
-        local n = 0
-        for _, item in ipairs(contentData.items) do
-            if item.type == "select" then
-                createSelectCard(Page, item.name, item.desc, item.icon, item.options, item.current, item.onSelect)
-            elseif item.type == "info" then
-                createInfoCard(Page, item.name, item.desc, item.icon)
-            end
-            n = n + 1
-        end
-        Page.CanvasSize = UDim2.new(0, 0, 0, n * 52 + 12)
-        spawn(function()
-            while true do
-                wait(0.5)
-                if Page.Visible then
-                    for _, card in ipairs(Page:GetChildren()) do
-                        if card:IsA("Frame") then
-                            local descLabel = card:FindFirstChildOfClass("TextLabel")
-                            if descLabel and card:FindFirstChild("TitleText") then
-                                local titleLabel = card:FindFirstChild("TitleText")
-                                if titleLabel and titleLabel.Text == "FPS显示" then
-                                    descLabel.Text = "当前帧率: " .. tostring(currentFPS) .. " FPS"
-                                end
-                                if titleLabel and titleLabel.Text == "执行次数" then
-                                    descLabel.Text = "已执行: " .. globalExecCount .. " 次"
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end)
     end
     contentPages[pageName] = Page
 end
+-- 主脚本 第8段：设置页功能 + 打开/关闭动画 + 导航初始化 + 结尾
 
+-- 创建设置页
+local settingsPage = Instance.new("ScrollingFrame")
+settingsPage.Size = UDim2.new(1, 0, 1, 0); settingsPage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+settingsPage.BorderSizePixel = 0; settingsPage.ScrollBarThickness = 3; settingsPage.ScrollBarImageColor3 = Color3.fromRGB(200, 200, 200)
+settingsPage.Visible = false; settingsPage.ZIndex = 7; settingsPage.Parent = ContentArea
+local settingsList = Instance.new("UIListLayout"); settingsList.Padding = UDim.new(0, 6); settingsList.Parent = settingsPage
+local settingsSpacer = Instance.new("Frame"); settingsSpacer.Size = UDim2.new(1, 0, 0, 6); settingsSpacer.BackgroundTransparency = 1; settingsSpacer.Parent = settingsPage
+contentPages["设置"] = settingsPage
+
+-- 设置项
+local settingsItems = {
+    {type = "color", name = "边框颜色", desc = "切换面板边框颜色", icon = "🎨", colors = {"金色", "红色", "蓝色", "绿色", "紫色", "粉色", "青色", "白色"}},
+    {type = "size", name = "面板比例", desc = "切换平板/手机尺寸", icon = "📱", modes = {"平板", "手机"}},
+    {type = "toggle", name = "显示FPS", desc = "左上角实时帧率", icon = "📊", code = "fps"},
+}
+
+local function createSettingsCard(parent, item)
+    local Card = Instance.new("Frame")
+    Card.Size = UDim2.new(1, -16, 0, 46); Card.Position = UDim2.new(0, 8, 0, 0)
+    Card.BackgroundColor3 = Color3.fromRGB(252, 252, 252); Card.BorderSizePixel = 0; Card.ZIndex = 7; Card.Parent = parent
+    local CardCorner = Instance.new("UICorner"); CardCorner.CornerRadius = UDim.new(0, 10); CardCorner.Parent = Card
+    local CardStroke = Instance.new("UIStroke"); CardStroke.Color = Color3.fromRGB(230, 230, 230); CardStroke.Thickness = 1; CardStroke.Parent = Card
+    
+    local IconFrame = Instance.new("Frame")
+    IconFrame.Size = UDim2.new(0, 26, 0, 26); IconFrame.Position = UDim2.new(0, 10, 0, 10)
+    IconFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240); IconFrame.BorderSizePixel = 0; IconFrame.ZIndex = 8; IconFrame.Parent = Card
+    local IconCorner = Instance.new("UICorner"); IconCorner.CornerRadius = UDim.new(0, 6); IconCorner.Parent = IconFrame
+    local IconText = Instance.new("TextLabel")
+    IconText.Size = UDim2.new(1, 0, 1, 0); IconText.Text = item.icon; IconText.TextSize = 11
+    IconText.BackgroundTransparency = 1; IconText.ZIndex = 9; IconText.Parent = IconFrame
+    
+    local TitleText = Instance.new("TextLabel")
+    TitleText.Size = UDim2.new(0, 160, 0, 15); TitleText.Position = UDim2.new(0, 44, 0, 5)
+    TitleText.Text = item.name; TitleText.TextColor3 = Color3.fromRGB(50, 50, 50)
+    TitleText.Font = Enum.Font.GothamSemibold; TitleText.TextSize = 11
+    TitleText.BackgroundTransparency = 1; TitleText.TextXAlignment = Enum.TextXAlignment.Left; TitleText.ZIndex = 8; TitleText.Parent = Card
+    
+    local DescText = Instance.new("TextLabel")
+    DescText.Size = UDim2.new(1, -140, 0, 13); DescText.Position = UDim2.new(0, 44, 0, 22)
+    DescText.Text = item.desc; DescText.TextColor3 = Color3.fromRGB(130, 130, 130)
+    DescText.Font = Enum.Font.Gotham; DescText.TextSize = 9; DescText.BackgroundTransparency = 1
+    DescText.TextXAlignment = Enum.TextXAlignment.Left; DescText.ZIndex = 8; DescText.Parent = Card
+    
+    if item.type == "color" then
+        local btnGroup = Instance.new("Frame")
+        btnGroup.Size = UDim2.new(0, 130, 0, 26)
+        btnGroup.Position = UDim2.new(1, -140, 0, 10)
+        btnGroup.BackgroundTransparency = 1
+        btnGroup.ZIndex = 9
+        btnGroup.Parent = Card
+        
+        local colorBtns = {}
+        for i, colorName in ipairs(item.colors) do
+            local colorBtn = Instance.new("TextButton")
+            colorBtn.Size = UDim2.new(0, 26, 0, 26)
+            colorBtn.Position = UDim2.new(0, (i-1) * 32, 0, 0)
+            colorBtn.BackgroundColor3 = borderColors[colorName]
+            colorBtn.BorderSizePixel = 1
+            colorBtn.BorderColor3 = colorName == currentBorderColor and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 200)
+            colorBtn.Text = ""
+            colorBtn.ZIndex = 10
+            colorBtn.AutoButtonColor = false
+            colorBtn.Parent = btnGroup
+            local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(1, 0); corner.Parent = colorBtn
+            
+            colorBtn.MouseButton1Click:Connect(function()
+                currentBorderColor = colorName
+                RGBBorder.BackgroundColor3 = borderColors[colorName]
+                for _, btn in ipairs(colorBtns) do
+                    btn.BorderColor3 = Color3.fromRGB(200, 200, 200)
+                end
+                colorBtn.BorderColor3 = Color3.fromRGB(255, 255, 255)
+            end)
+            table.insert(colorBtns, colorBtn)
+        end
+        
+    elseif item.type == "size" then
+        local sizeGroup = Instance.new("Frame")
+        sizeGroup.Size = UDim2.new(0, 120, 0, 26)
+        sizeGroup.Position = UDim2.new(1, -130, 0, 10)
+        sizeGroup.BackgroundTransparency = 1
+        sizeGroup.ZIndex = 9
+        sizeGroup.Parent = Card
+        
+        for i, mode in ipairs(item.modes) do
+            local modeBtn = Instance.new("TextButton")
+            modeBtn.Size = UDim2.new(0, 56, 0, 26)
+            modeBtn.Position = UDim2.new(0, (i-1) * 60, 0, 0)
+            modeBtn.Text = mode
+            modeBtn.TextColor3 = mode == panelMode and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(80, 80, 80)
+            modeBtn.Font = Enum.Font.GothamBold
+            modeBtn.TextSize = 10
+            modeBtn.BackgroundColor3 = mode == panelMode and Color3.fromRGB(255, 140, 0) or Color3.fromRGB(230, 230, 230)
+            modeBtn.BorderSizePixel = 0
+            modeBtn.ZIndex = 10
+            modeBtn.AutoButtonColor = false
+            modeBtn.Parent = sizeGroup
+            local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 4); corner.Parent = modeBtn
+            
+            modeBtn.MouseButton1Click:Connect(function()
+                panelMode = mode
+                applyPanelSize()
+                for _, child in ipairs(sizeGroup:GetChildren()) do
+                    if child:IsA("TextButton") then
+                        child.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+                        child.TextColor3 = Color3.fromRGB(80, 80, 80)
+                    end
+                end
+                modeBtn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+                modeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                if isOpen then
+                    MainFrame.Size = MainFrame.Size
+                    MainFrame.Position = MainFrame.Position
+                end
+            end)
+        end
+        
+    elseif item.type == "toggle" then
+        local Toggle = Instance.new("TextButton")
+        Toggle.Size = UDim2.new(0, 36, 0, 20); Toggle.Position = UDim2.new(1, -46, 0, 13)
+        Toggle.BackgroundColor3 = fpsEnabled and Color3.fromRGB(255, 140, 0) or Color3.fromRGB(200, 200, 200)
+        Toggle.Text = ""; Toggle.BorderSizePixel = 0; Toggle.ZIndex = 8; Toggle.AutoButtonColor = false; Toggle.Parent = Card
+        local ToggleCorner = Instance.new("UICorner"); ToggleCorner.CornerRadius = UDim.new(1, 0); ToggleCorner.Parent = Toggle
+        local ToggleKnob = Instance.new("Frame")
+        ToggleKnob.Size = UDim2.new(0, 16, 0, 16)
+        ToggleKnob.Position = fpsEnabled and UDim2.new(1, -18, 0, 2) or UDim2.new(0, 2, 0, 2)
+        ToggleKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255); ToggleKnob.BorderSizePixel = 0; ToggleKnob.ZIndex = 9; ToggleKnob.Parent = Toggle
+        local KnobCorner = Instance.new("UICorner"); KnobCorner.CornerRadius = UDim.new(1, 0); KnobCorner.Parent = ToggleKnob
+        
+        Toggle.MouseButton1Click:Connect(function()
+            fpsEnabled = not fpsEnabled
+            FPSLabel.Visible = fpsEnabled
+            Toggle.BackgroundColor3 = fpsEnabled and Color3.fromRGB(255, 140, 0) or Color3.fromRGB(200, 200, 200)
+            ToggleKnob:TweenPosition(fpsEnabled and UDim2.new(1, -18, 0, 2) or UDim2.new(0, 2, 0, 2), "Out", "Quad", 0.15)
+        end)
+    end
+end
+
+for _, item in ipairs(settingsItems) do
+    createSettingsCard(settingsPage, item)
+end
+settingsPage.CanvasSize = UDim2.new(0, 0, 0, #settingsItems * 52 + 12)
+
+-- 打开/关闭动画
 contentPages["公告"].Visible = true
-
--- ============ 打开/关闭动画 ============
 local isOpen = false
+
 local function openPanel()
     isOpen = true
     MainFrame.Size = UDim2.new(0, 0, 0, 0); MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     MainFrame.Visible = true
-    if settingsData.panelSize == "手机" then
-        TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 420, 0, 380), Position = UDim2.new(0.5, -210, 0.5, -190)}):Play()
-    else
-        TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 580, 0, 440), Position = UDim2.new(0.5, -290, 0.5, -220)}):Play()
-    end
+    applyPanelSize()
+    TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = MainFrame.Size, Position = MainFrame.Position}):Play()
 end
+
 local function closePanel()
     isOpen = false
     TweenService:Create(MainFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
     wait(0.15); MainFrame.Visible = false
 end
+
 OpenBtn.MouseButton1Click:Connect(function()
     if isOpen then closePanel() else openPanel() end
 end)
 CloseButton.MouseButton1Click:Connect(function() closePanel() end)
-
 selectNav(navButtons[1].button, "公告")
 
-game:BindToClose(function()
-    if followConnection then
-        followConnection:disconnect()
-        followConnection = nil
-    end
-end)
-
-print("黑脚本·管理员版 V1.5 加载完成！")
-print("作者: CHANGCHENG66")
-print("感谢使用！❤️")
--- 第6段-B结束
+print("黑脚本·管理员版 已加载完成")
