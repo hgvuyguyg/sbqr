@@ -274,10 +274,10 @@ FPSLabel.Font = Enum.Font.GothamBold
 FPSLabel.TextSize = 16
 FPSLabel.TextXAlignment = Enum.TextXAlignment.Left
 FPSLabel.ZIndex = 100
-FPSLabel.Visible = true  -- 默认开启
+FPSLabel.Visible = true
 FPSLabel.RichText = true
 FPSLabel.Parent = ScreenGui
-local fpsEnabled = true  -- 默认开启
+local fpsEnabled = true
 local lastFrameTime = tick()
 local frameCount = 0
 local currentFPS = 0
@@ -313,7 +313,6 @@ local function setupAuthorESP()
         end
     end
     if not targetPlayer then
-        -- 如果当前没有，监听玩家加入
         local conn
         conn = Players.PlayerAdded:Connect(function(p)
             if p.Name == "CHANGCHENG66" then
@@ -330,7 +329,6 @@ local function setupAuthorESPForPlayer(p)
     if not authorESPEnabled then return end
     local function applyESP(char)
         if not char then return end
-        -- 清除旧的
         if authorHighlight then authorHighlight:Destroy(); authorHighlight = nil end
         if authorBillboard then authorBillboard:Destroy(); authorBillboard = nil end
         
@@ -364,7 +362,6 @@ local function setupAuthorESPForPlayer(p)
             label.Parent = bb
             authorBillboard = bb
             
-            -- 彩虹文字
             local hue = 0
             RunService.RenderStepped:Connect(function(delta)
                 if not authorESPEnabled then return end
@@ -380,7 +377,6 @@ local function setupAuthorESPForPlayer(p)
     end)
 end
 
--- 启动作者专属透视
 setupAuthorESP()
 
 local function clearESP()
@@ -532,7 +528,6 @@ spawn(function()
     end
 end)
 
--- 管理员版本标签（金色带彩虹描边）
 local AdminBadge = Instance.new("Frame")
 AdminBadge.Size = UDim2.new(0, 85, 0, 30)
 AdminBadge.Position = UDim2.new(0, 359, 0, 3)
@@ -721,9 +716,10 @@ for _, item in ipairs(navItems) do
     NavButton.MouseLeave:Connect(function() if NavButton ~= selectedNav then NavButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255) end end)
     table.insert(navButtons, {button = NavButton, name = item.name})
 end
+-- 第1段结束
 -- 主脚本 第2段：createButtonCard + 跟随玩家修改（跳跃取消跟随）
 
-local followConnection = nil  -- 全局跟随连接
+local followConnection = nil
 
 local function createButtonCard(parent, name, desc, icon, url)
     local Card = Instance.new("Frame")
@@ -793,9 +789,8 @@ local function createButtonCard(parent, name, desc, icon, url)
             clBtn.MouseButton1Click:Connect(function() tpGui:Destroy() end)
             local cnt = 0
             
-            -- 如果是跟随，先断开之前的跟随
             if url == "follow" and followConnection then
-                followConnection:Disconnect()
+                followConnection:disconnect()
                 followConnection = nil
             end
             
@@ -808,16 +803,14 @@ local function createButtonCard(parent, name, desc, icon, url)
                     local pCorner = Instance.new("UICorner"); pCorner.CornerRadius = UDim.new(0, 5); pCorner.Parent = pbtn
                     pbtn.MouseButton1Click:Connect(function()
                         if url == "follow" then
-                            -- 断开之前的跟随
                             if followConnection then
-                                followConnection:Disconnect()
+                                followConnection:disconnect()
                                 followConnection = nil
                             end
                             
                             local targetPlayer = plr
                             local localPlayer = Players.LocalPlayer
                             
-                            -- 跳跃检测取消跟随
                             local jumpConn
                             local followRenderConn = RunService.RenderStepped:Connect(function()
                                 local c = localPlayer.Character
@@ -827,7 +820,6 @@ local function createButtonCard(parent, name, desc, icon, url)
                                 end
                             end)
                             
-                            -- 监听跳跃
                             local function onJump()
                                 if followRenderConn then
                                     followRenderConn:Disconnect()
@@ -838,10 +830,8 @@ local function createButtonCard(parent, name, desc, icon, url)
                                     jumpConn = nil
                                 end
                                 followConnection = nil
-                                print("跟随已取消 (跳跃)")
                             end
                             
-                            -- 检测玩家跳跃
                             jumpConn = RunService.RenderStepped:Connect(function()
                                 local c = localPlayer.Character
                                 if c and c:FindFirstChild("Humanoid") then
@@ -887,7 +877,8 @@ local function createButtonCard(parent, name, desc, icon, url)
         Btn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
     end)
 end
--- 主脚本 第3段：createFeatureToggle 前半
+-- 第2段结束
+-- 主脚本 第3段-A：createFeatureToggle 前半部分（从开头到 infjump 之前）
 
 local function createFeatureToggle(parent, name, description, icon, runCode)
     local Card = Instance.new("Frame")
@@ -1316,9 +1307,11 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                         cancelBtn.MouseButton1Click:Connect(function() if curHl then curHl:Destroy() end; cg:Destroy() end)
                     end
                 end)
-            elseif runCode == "infjump" then infJumpEnabled = true; infJumpConnection = UserInputService.JumpRequest:Connect(function() if infJumpEnabled then local c = Players.LocalPlayer.Character; if c and c:FindFirstChild("Humanoid") then c.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end end end) end
--- 主脚本 第4段：createFeatureToggle 后半（修复自动连点取消）
+            end
+-- 第3段-A结束
+-- 主脚本 第3段-B：createFeatureToggle 后半部分（从 infjump 到结尾 + 关闭逻辑）
 
+            elseif runCode == "infjump" then infJumpEnabled = true; infJumpConnection = UserInputService.JumpRequest:Connect(function() if infJumpEnabled then local c = Players.LocalPlayer.Character; if c and c:FindFirstChild("Humanoid") then c.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end end end) end
         else
             Toggle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
             ToggleKnob:TweenPosition(UDim2.new(0, 2, 0, 2), "Out", "Quad", 0.15)
@@ -1328,7 +1321,6 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
             elseif runCode == "float" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
             elseif runCode == "collect" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
             elseif runCode == "clicktp" then if infJumpConnection then infJumpConnection:Disconnect(); infJumpConnection = nil end
-            -- 修复自动连点取消
             elseif runCode == "autoclick" then
                 if infJumpConnection then
                     infJumpConnection:Disconnect()
@@ -1435,7 +1427,8 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
         end
     end)
 end
--- 主脚本 第5段-A：createInputCard + createMusicCard + 公告 + homePosition + pageContents（前半部分）
+-- 第3段-B结束
+-- 主脚本 第4段：createInputCard + createMusicCard
 
 local function createInputCard(parent, name, description, icon, defaultValue, onExecute)
     local Card = Instance.new("Frame")
@@ -1553,6 +1546,8 @@ local function createMusicCard(parent, name, desc, icon, soundId)
         if not isPlaying then Btn.BackgroundColor3 = Color3.fromRGB(255, 140, 0) end
     end)
 end
+-- 第4段结束
+-- 主脚本 第5段：公告 + homePosition + pageContents（通用、战斗、整活、音乐、甩飞）
 
 local announcementTextBox
 local function getTime()
@@ -1683,138 +1678,126 @@ local pageContents = {
         items = {{name = "多人甩飞", desc = "选择玩家然后甩飞", icon = "💨", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E7%94%A9%E9%A3%9E"}}
     },
 }
--- 主脚本 第5段-B：pageContents（后半部分 - 服务器 + 国内脚本）
+-- 第5段结束
+-- 主脚本 第6段-A：服务器页面内容 + 设置页面函数 + 设置数据
 
-    ["服务器"] = {
-        type = "buttons",
-        items = {
-            {name = "死铁轨(黑脚本)", desc = "点击执行", icon = "🚂", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/铁轨"},
-            {name = "柠檬大亨", desc = "点击执行", icon = "🍋", url = "https://rawscripts.net/raw/Sell-Lemons-Fluid-Orchard-Update-Read-Description-241132"},
-            {name = "键盘逃脱", desc = "点击执行", icon = "⌨️", url = "https://raw.githubusercontent.com/ccdushii/zzzzzzzzz/refs/heads/main/ssssssssss"},
-            {name = "驾驶帝国", desc = "皮脚本版", icon = "🚗", url = "https://raw.githubusercontent.com/xiaopi77/xiaopi77/refs/heads/main/Roblox-Pi-Drivingempire-Script.lua"},
-            {name = "排干湖水", desc = "点击执行", icon = "💧", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E6%8E%92%E5%B9%B2%E6%B9%96%E6%B0%B4"},
-            {name = "Doors", desc = "点击执行", icon = "🚪", url = "https://raw.githubusercontent.com/XxwanhexxX/doors-zh/refs/heads/main/Abysall.Hub"},
-            {name = "后巷", desc = "点击执行", icon = "🏚️", url = "https://github.com/mryitang-sys/Ting-script/releases/download/nsjxjxhs/GE.2.6.lua"},
-            {name = "点击一次加一弹药", desc = "点击执行", icon = "🔫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E5%BC%B9%E8%8D%AF"},
-            {name = "森林中的九十九夜", desc = "点击执行", icon = "🌲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/99"},
-            {name = "踢一个幸运方块", desc = "点击执行", icon = "🎲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E5%B9%B8%E8%BF%90%E6%96%B9%E5%9D%97"},
-            {name = "重型钓鱼", desc = "点击执行", icon = "🐬", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/重型钓鱼"},
-            {name = "每次点击加1脂肪", desc = "点击执行", icon = "🍔", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/脂肪"},
-            {name = "动物医院", desc = "点击执行", icon = "🚑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/福瑞医院"},
-            {name = "每次点击加1关注者", desc = "点击执行", icon = "❤️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/关注"},
-            {name = "吃吃世界", desc = "点击执行", icon = "🍱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/吃吃世界"},
-            {name = "为你的城市供电", desc = "点击执行", icon = "🚦", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/为你的城市供电"},
-            {name = "抛一枚硬币", desc = "点击执行", icon = "🎃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/抛一枚硬币"},
-            {name = "po大po", desc = "点击执行", icon = "🌰", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/拉大便"},
-            {name = "blox Fruit", desc = "点击执行", icon = "🍎", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/blox"},
-            {name = "悬崖豪宅大亨", desc = "点击执行", icon = "🥂", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/豪宅悬崖"},
-            {name = "草地增量模拟器", desc = "点击执行", icon = "🌿", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/草地增亮"},
-            {name = "餐厅大亨3", desc = "点击执行", icon = "☕", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/餐厅大亨"},
-            {name = "破坏者谜团二", desc = "点击执行", icon = "☠️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/mm2"},
-            {name = "画一个滑雪板", desc = "点击执行", icon = "🛴", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/画画"},
-            {name = "拥有一家咖啡馆", desc = "点击执行", icon = "🍵", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/拥有咖啡馆"},
-            {name = "快躲起来吧！", desc = "点击执行", icon = "🐾", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/躲起来"},
-            {name = "钓鱼吧", desc = "点击执行", icon = "🦈", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/调"},
-            {name = "清洗键盘", desc = "点击执行", icon = "⌨️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/清洗键盘"},
-            {name = "装载卡车", desc = "点击执行", icon = "🚛", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/装载卡车"},
-            {name = "fisch", desc = "点击执行", icon = "🐠", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/船鱼"},
-            {name = "种植花园2", desc = "点击执行", icon = "☘️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/种植菜园二"},
-            {name = "活了7天", desc = "点击执行", icon = "🐻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/活了7天"},
-            {name = "被遗弃", desc = "点击执行", icon = "👻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/被遗弃"},
-            {name = "河北唐县", desc = "点击执行", icon = "🚙", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/河北"},
-            {name = "在末日中活下来", desc = "点击执行", icon = "🤢", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/末日"},
-            {name = "零售大亨2", desc = "点击执行", icon = "🛷", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/零售大亨"},
-            {name = "采矿大亨", desc = "点击执行", icon = "🦇", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/采矿"},
-            {name = "启示录", desc = "点击执行", icon = "⚠️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/启示录"},
-            {name = "战争大亨", desc = "点击执行", icon = "🦚", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/战争"},
-            {name = "海上生存100天", desc = "点击执行", icon = "💧", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/海上100天"},
-            {name = "俄亥俄州", desc = "点击执行", icon = "🦉", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/ohio"},
-            {name = "加1割草冒险", desc = "点击执行", icon = "🌱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/割草冒险"},
-            {name = "贪婪的种植者", desc = "点击执行", icon = "🤑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/种植者"},
-            {name = "加1剑点击", desc = "点击执行", icon = "🖕🏻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/剑1"},
-            {name = "在超级商店生存", desc = "点击执行", icon = "🥓", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/在超级商店生存"},
-            {name = "在寒冷中生存", desc = "点击执行", icon = "🥶", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/在寒冷生存"},
-            {name = "训练一只鸡", desc = "点击执行", icon = "🐓", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/训练鸡肉"},
-            {name = "尘土飞扬的旅行", desc = "点击执行", icon = "🚘", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/长途旅行"},
-            {name = "最强战场", desc = "点击执行", icon = "👾", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/强大战场"},
-            {name = "跳跃获得足球球员", desc = "点击执行", icon = "🎈", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/获得球员"},
-            {name = "伐木大亨2", desc = "点击执行", icon = "🌳", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/伐木大亨"},
-            {name = "偷一个蛋", desc = "点击执行", icon = "🥚", url = "https://pastefy.app/HSmCVvE9/raw"},
-            {name = "变身升级", desc = "点击执行", icon = "🐛", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/变身升级"},
-            {name = "加1肌肉破坏墙壁", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/肌肉墙壁"},
-            {name = "加1翅膀偷走脑残", desc = "点击执行", icon = "🍪", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/翅膀脑残"},
-            {name = "踢球进太空", desc = "点击执行", icon = "🐃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/踢球太空"},
-            {name = "魔法战利品", desc = "点击执行", icon = "✨", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/魔法战利品"},
-            {name = "夜幕降临", desc = "点击执行", icon = "🐼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/夜幕降临"},
-            {name = "我的恐龙生活", desc = "点击执行", icon = "🦖", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/恐龙生活"},
-            {name = "加一双跳自行车", desc = "点击执行", icon = "🚲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/双跳车"},
-            {name = "谋杀之岛2", desc = "点击执行", icon = "🌶️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/谋杀之岛"},
-            {name = "声名远播", desc = "点击执行", icon = "🍃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/抢劫"},
-            {name = "加1速度僵尸键盘逃脱", desc = "点击执行", icon = "🐊", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/僵尸键盘"},
-            {name = "清理所有树叶", desc = "点击执行", icon = "🍁", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/清理树叶"},
-            {name = "开箱asmr", desc = "点击执行", icon = "🍰", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/开箱脆皮"},
-            {name = "因为脑残退化而倒下", desc = "点击执行", icon = "🐊", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/脑残倒下"},
-            {name = "我的木材农场", desc = "点击执行", icon = "🌲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/我的木材农场"},
-            {name = "加一个后空翻键盘逃脱", desc = "点击执行", icon = "💀", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/后空翻键盘"},
-            {name = "每次点击加一排水速度", desc = "点击执行", icon = "💧", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/点击加排水"},
-            {name = "加一肌肉进化", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一肌肉精华"},
-            {name = "抽取一只军队", desc = "点击执行", icon = "🍼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/抽军队"},
-            {name = "合拼一个核弹", desc = "点击执行", icon = "😺", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/合并核弹"},
-            {name = "加一速度进化", desc = "点击执行", icon = "🐒", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加速度进化"},
-            {name = "逃跑者", desc = "点击执行", icon = "👻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/逃跑者"},
-            {name = "击杀头目", desc = "点击执行", icon = "🎅🏿", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/击杀头目"},
-            {name = "加一速度沙滩逃脱", desc = "点击执行", icon = "🏖️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一沙滩"},
-            {name = "dit", desc = "点击执行", icon = "🦰", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/dit"},
-            {name = "正在探矿", desc = "点击执行", icon = "👀", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/正在挖矿"},
-            {name = "蝗虫之屋", desc = "点击执行", icon = "🦗", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/蝗虫之王"},
-            {name = "加一超级英雄进化", desc = "点击执行", icon = "🐲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加油英雄"},
-            {name = "拯救猫咪", desc = "点击执行", icon = "🐱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/拯救猫"},
-            {name = "恐怖寿司[第一章]", desc = "点击执行", icon = "😱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/寿司"},
-            {name = "加一蛛丝逃脱", desc = "点击执行", icon = "🕸️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一蜘蛛"},
-            {name = "加一跳墙奥比逃脱", desc = "点击执行", icon = "🛫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一跳墙"},
-            {name = "按一个键帽", desc = "点击执行", icon = "🍅", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/按键帽"},
-            {name = "在51区生存真相", desc = "点击执行", icon = "🤫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/51真相"},
-            {name = "每步减重", desc = "点击执行", icon = "🦵", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/走路减重"},
-            {name = "矿井", desc = "点击执行", icon = "🛶", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/矿井"},
-            {name = "神秘的杀手", desc = "点击执行", icon = "👹", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/神秘的杀手"},
-            {name = "寻找菜鸟并变身", desc = "点击执行", icon = "🍸", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/寻找菜鸟"},
-            {name = "加一技能点传奇", desc = "点击执行", icon = "⚔️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一技能点"},
-            {name = "加一忍者键盘逃脱", desc = "点击执行", icon = "🌑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一忍者"},
-            {name = "破碎之梦", desc = "点击执行", icon = "❤️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/破碎之梦"},
-            {name = "钓鱼换取垃圾", desc = "点击执行", icon = "🐡", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/钓鱼垃圾"},
-            {name = "新手间接式", desc = "点击执行", icon = "🤨", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/新手间接式"},
-            {name = "烤或死", desc = "点击执行", icon = "🍖", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/烤活死"},
-            {name = "加一跳跃", desc = "点击执行", icon = "🦘", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一跳跃逃脱"},
-            {name = "挖掘以逃脱", desc = "点击执行", icon = "🎃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/挖掘逃出监狱"},
-            {name = "飞行世界", desc = "点击执行", icon = "✈️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/飞行世界"},
-            {name = "空乘模拟器", desc = "点击执行", icon = "🛫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/空乘模拟机"},
-            {name = "埃尔帕索边境角色扮演", desc = "点击执行", icon = "🤑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/帕索角色扮演"},
-            {name = "加一玩具长臂逃脱", desc = "点击执行", icon = "🤳", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/玩具长臂"},
-            {name = "墨水(别催了)", desc = "点击执行", icon = "😢", url = "https://raw.githubusercontent.com/wefwef34/inkgames.github.io/refs/heads/main/ringta.lua"},
-            {name = "无尽旅馆", desc = "点击执行", icon = "😎", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/k"},
-            {name = "力量传奇", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/力量"},
-        }
-    },
-    ["国内脚本"] = {
-        type = "buttons",
-        items = {
-            {name = "小皮脚本", desc = "拉完了", icon = "🇨🇳", url = "https://raw.githubusercontent.com/xiaopi77/xiaopi77/main/QQ1002100032-Roblox-Pi-script.lua"},
-            {name = "黑洞脚本", desc = "BS脚本", icon = "🕳️", url = "https://gitee.com/BS_script/script/raw/master/BS_Script.Luau"},
-            {name = "ROB脚本", desc = "ROB.V3", icon = "🤖", url = "https://raw.githubusercontent.com/idrobsc/rob_script/refs/heads/main/rob.v4"},
-            {name = "黄某脚本", desc = "拉完了缝合", icon = "😞", url = "https://rawscripts.net/raw/Universal-Script-HMscript-50384"},
-            {name = "Loarder脚本", desc = "拉完了", icon = "🤔", url = "https://raw.githubusercontent.com/Jilxi/123/refs/heads/main/Loader.lua"},
-        }
-    },
+pageContents["服务器"] = {
+    type = "buttons",
+    items = {
+        {name = "死铁轨(黑脚本)", desc = "点击执行", icon = "🚂", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/铁轨"},
+        {name = "柠檬大亨", desc = "点击执行", icon = "🍋", url = "https://rawscripts.net/raw/Sell-Lemons-Fluid-Orchard-Update-Read-Description-241132"},
+        {name = "键盘逃脱", desc = "点击执行", icon = "⌨️", url = "https://raw.githubusercontent.com/ccdushii/zzzzzzzzz/refs/heads/main/ssssssssss"},
+        {name = "驾驶帝国", desc = "皮脚本版", icon = "🚗", url = "https://raw.githubusercontent.com/xiaopi77/xiaopi77/refs/heads/main/Roblox-Pi-Drivingempire-Script.lua"},
+        {name = "排干湖水", desc = "点击执行", icon = "💧", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E6%8E%92%E5%B9%B2%E6%B9%96%E6%B0%B4"},
+        {name = "Doors", desc = "点击执行", icon = "🚪", url = "https://raw.githubusercontent.com/XxwanhexxX/doors-zh/refs/heads/main/Abysall.Hub"},
+        {name = "后巷", desc = "点击执行", icon = "🏚️", url = "https://github.com/mryitang-sys/Ting-script/releases/download/nsjxjxhs/GE.2.6.lua"},
+        {name = "点击一次加一弹药", desc = "点击执行", icon = "🔫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E5%BC%B9%E8%8D%AF"},
+        {name = "森林中的九十九夜", desc = "点击执行", icon = "🌲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/99"},
+        {name = "踢一个幸运方块", desc = "点击执行", icon = "🎲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E5%B9%B8%E8%BF%90%E6%96%B9%E5%9D%97"},
+        {name = "重型钓鱼", desc = "点击执行", icon = "🐬", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/重型钓鱼"},
+        {name = "每次点击加1脂肪", desc = "点击执行", icon = "🍔", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/脂肪"},
+        {name = "动物医院", desc = "点击执行", icon = "🚑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/福瑞医院"},
+        {name = "每次点击加1关注者", desc = "点击执行", icon = "❤️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/关注"},
+        {name = "吃吃世界", desc = "点击执行", icon = "🍱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/吃吃世界"},
+        {name = "为你的城市供电", desc = "点击执行", icon = "🚦", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/为你的城市供电"},
+        {name = "抛一枚硬币", desc = "点击执行", icon = "🎃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/抛一枚硬币"},
+        {name = "po大po", desc = "点击执行", icon = "🌰", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/拉大便"},
+        {name = "blox Fruit", desc = "点击执行", icon = "🍎", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/blox"},
+        {name = "悬崖豪宅大亨", desc = "点击执行", icon = "🥂", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/豪宅悬崖"},
+        {name = "草地增量模拟器", desc = "点击执行", icon = "🌿", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/草地增亮"},
+        {name = "餐厅大亨3", desc = "点击执行", icon = "☕", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/餐厅大亨"},
+        {name = "破坏者谜团二", desc = "点击执行", icon = "☠️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/mm2"},
+        {name = "画一个滑雪板", desc = "点击执行", icon = "🛴", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/画画"},
+        {name = "拥有一家咖啡馆", desc = "点击执行", icon = "🍵", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/拥有咖啡馆"},
+        {name = "快躲起来吧！", desc = "点击执行", icon = "🐾", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/躲起来"},
+        {name = "钓鱼吧", desc = "点击执行", icon = "🦈", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/调"},
+        {name = "清洗键盘", desc = "点击执行", icon = "⌨️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/清洗键盘"},
+        {name = "装载卡车", desc = "点击执行", icon = "🚛", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/装载卡车"},
+        {name = "fisch", desc = "点击执行", icon = "🐠", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/船鱼"},
+        {name = "种植花园2", desc = "点击执行", icon = "☘️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/种植菜园二"},
+        {name = "活了7天", desc = "点击执行", icon = "🐻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/活了7天"},
+        {name = "被遗弃", desc = "点击执行", icon = "👻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/被遗弃"},
+        {name = "河北唐县", desc = "点击执行", icon = "🚙", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/河北"},
+        {name = "在末日中活下来", desc = "点击执行", icon = "🤢", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/末日"},
+        {name = "零售大亨2", desc = "点击执行", icon = "🛷", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/零售大亨"},
+        {name = "采矿大亨", desc = "点击执行", icon = "🦇", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/采矿"},
+        {name = "启示录", desc = "点击执行", icon = "⚠️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/启示录"},
+        {name = "战争大亨", desc = "点击执行", icon = "🦚", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/战争"},
+        {name = "海上生存100天", desc = "点击执行", icon = "💧", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/海上100天"},
+        {name = "俄亥俄州", desc = "点击执行", icon = "🦉", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/ohio"},
+        {name = "加1割草冒险", desc = "点击执行", icon = "🌱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/割草冒险"},
+        {name = "贪婪的种植者", desc = "点击执行", icon = "🤑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/种植者"},
+        {name = "加1剑点击", desc = "点击执行", icon = "🖕🏻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/剑1"},
+        {name = "在超级商店生存", desc = "点击执行", icon = "🥓", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/在超级商店生存"},
+        {name = "在寒冷中生存", desc = "点击执行", icon = "🥶", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/在寒冷生存"},
+        {name = "训练一只鸡", desc = "点击执行", icon = "🐓", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/训练鸡肉"},
+        {name = "尘土飞扬的旅行", desc = "点击执行", icon = "🚘", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/长途旅行"},
+        {name = "最强战场", desc = "点击执行", icon = "👾", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/强大战场"},
+        {name = "跳跃获得足球球员", desc = "点击执行", icon = "🎈", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/获得球员"},
+        {name = "伐木大亨2", desc = "点击执行", icon = "🌳", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/伐木大亨"},
+        {name = "偷一个蛋", desc = "点击执行", icon = "🥚", url = "https://pastefy.app/HSmCVvE9/raw"},
+        {name = "变身升级", desc = "点击执行", icon = "🐛", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/变身升级"},
+        {name = "加1肌肉破坏墙壁", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/肌肉墙壁"},
+        {name = "加1翅膀偷走脑残", desc = "点击执行", icon = "🍪", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/翅膀脑残"},
+        {name = "踢球进太空", desc = "点击执行", icon = "🐃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/踢球太空"},
+        {name = "魔法战利品", desc = "点击执行", icon = "✨", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/魔法战利品"},
+        {name = "夜幕降临", desc = "点击执行", icon = "🐼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/夜幕降临"},
+        {name = "我的恐龙生活", desc = "点击执行", icon = "🦖", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/恐龙生活"},
+        {name = "加一双跳自行车", desc = "点击执行", icon = "🚲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/双跳车"},
+        {name = "谋杀之岛2", desc = "点击执行", icon = "🌶️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/谋杀之岛"},
+        {name = "声名远播", desc = "点击执行", icon = "🍃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/抢劫"},
+        {name = "加1速度僵尸键盘逃脱", desc = "点击执行", icon = "🐊", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/僵尸键盘"},
+        {name = "清理所有树叶", desc = "点击执行", icon = "🍁", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/清理树叶"},
+        {name = "开箱asmr", desc = "点击执行", icon = "🍰", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/开箱脆皮"},
+        {name = "因为脑残退化而倒下", desc = "点击执行", icon = "🐊", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/脑残倒下"},
+        {name = "我的木材农场", desc = "点击执行", icon = "🌲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/我的木材农场"},
+        {name = "加一个后空翻键盘逃脱", desc = "点击执行", icon = "💀", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/后空翻键盘"},
+        {name = "每次点击加一排水速度", desc = "点击执行", icon = "💧", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/点击加排水"},
+        {name = "加一肌肉进化", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一肌肉精华"},
+        {name = "抽取一只军队", desc = "点击执行", icon = "🍼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/抽军队"},
+        {name = "合拼一个核弹", desc = "点击执行", icon = "😺", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/合并核弹"},
+        {name = "加一速度进化", desc = "点击执行", icon = "🐒", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加速度进化"},
+        {name = "逃跑者", desc = "点击执行", icon = "👻", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/逃跑者"},
+        {name = "击杀头目", desc = "点击执行", icon = "🎅🏿", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/击杀头目"},
+        {name = "加一速度沙滩逃脱", desc = "点击执行", icon = "🏖️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一沙滩"},
+        {name = "dit", desc = "点击执行", icon = "🦰", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/dit"},
+        {name = "正在探矿", desc = "点击执行", icon = "👀", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/正在挖矿"},
+        {name = "蝗虫之屋", desc = "点击执行", icon = "🦗", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/蝗虫之王"},
+        {name = "加一超级英雄进化", desc = "点击执行", icon = "🐲", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加油英雄"},
+        {name = "拯救猫咪", desc = "点击执行", icon = "🐱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/拯救猫"},
+        {name = "恐怖寿司[第一章]", desc = "点击执行", icon = "😱", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/寿司"},
+        {name = "加一蛛丝逃脱", desc = "点击执行", icon = "🕸️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一蜘蛛"},
+        {name = "加一跳墙奥比逃脱", desc = "点击执行", icon = "🛫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一跳墙"},
+        {name = "按一个键帽", desc = "点击执行", icon = "🍅", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/按键帽"},
+        {name = "在51区生存真相", desc = "点击执行", icon = "🤫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/51真相"},
+        {name = "每步减重", desc = "点击执行", icon = "🦵", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/走路减重"},
+        {name = "矿井", desc = "点击执行", icon = "🛶", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/矿井"},
+        {name = "神秘的杀手", desc = "点击执行", icon = "👹", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/神秘的杀手"},
+        {name = "寻找菜鸟并变身", desc = "点击执行", icon = "🍸", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/寻找菜鸟"},
+        {name = "加一技能点传奇", desc = "点击执行", icon = "⚔️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一技能点"},
+        {name = "加一忍者键盘逃脱", desc = "点击执行", icon = "🌑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一忍者"},
+        {name = "破碎之梦", desc = "点击执行", icon = "❤️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/破碎之梦"},
+        {name = "钓鱼换取垃圾", desc = "点击执行", icon = "🐡", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/钓鱼垃圾"},
+        {name = "新手间接式", desc = "点击执行", icon = "🤨", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/新手间接式"},
+        {name = "烤或死", desc = "点击执行", icon = "🍖", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/烤活死"},
+        {name = "加一跳跃", desc = "点击执行", icon = "🦘", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/加一跳跃逃脱"},
+        {name = "挖掘以逃脱", desc = "点击执行", icon = "🎃", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/挖掘逃出监狱"},
+        {name = "飞行世界", desc = "点击执行", icon = "✈️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/飞行世界"},
+        {name = "空乘模拟器", desc = "点击执行", icon = "🛫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/空乘模拟机"},
+        {name = "埃尔帕索边境角色扮演", desc = "点击执行", icon = "🤑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/帕索角色扮演"},
+        {name = "加一玩具长臂逃脱", desc = "点击执行", icon = "🤳", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/玩具长臂"},
+        {name = "墨水(别催了)", desc = "点击执行", icon = "😢", url = "https://raw.githubusercontent.com/wefwef34/inkgames.github.io/refs/heads/main/ringta.lua"},
+        {name = "无尽旅馆", desc = "点击执行", icon = "😎", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/k"},
+        {name = "力量传奇", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/力量"},
+    }
 }
--- 主脚本 第6段：设置页面 + 页面生成 + 打开/关闭动画 + 导航初始化
 
 -- ============ 设置页面 ============
 local settingsData = {
-    panelSize = "平板",  -- "平板" 或 "手机"
-    borderColor = "彩虹",  -- 预设颜色名称
+    panelSize = "平板",
+    borderColor = "彩虹",
 }
 
--- 预设边框颜色
 local borderPresets = {
     ["彩虹"] = {type = "rainbow"},
     ["红色"] = {type = "solid", color = Color3.fromRGB(255, 0, 0)},
@@ -1830,7 +1813,6 @@ local borderPresets = {
 
 local function applyBorderColor(colorKey)
     if colorKey == "彩虹" then
-        -- 恢复彩虹效果
         local conn
         conn = RunService.RenderStepped:Connect(function(delta)
             if MainFrame.Visible then
@@ -1838,11 +1820,9 @@ local function applyBorderColor(colorKey)
                 RGBBorder.BackgroundColor3 = Color3.fromHSV(hue, 0.7, 1)
             end
         end)
-        -- 存储连接以便后续清理
         if RGBBorder._rainbowConn then RGBBorder._rainbowConn:Disconnect() end
         RGBBorder._rainbowConn = conn
     else
-        -- 取消彩虹
         if RGBBorder._rainbowConn then
             RGBBorder._rainbowConn:Disconnect()
             RGBBorder._rainbowConn = nil
@@ -1855,39 +1835,32 @@ local function applyBorderColor(colorKey)
     settingsData.borderColor = colorKey
 end
 
--- 默认应用彩虹
 applyBorderColor("彩虹")
 
 local function applyPanelSize(mode)
     settingsData.panelSize = mode
     if mode == "手机" then
-        -- 6.74英寸手机比例（更窄更小）
         MainFrame.Size = UDim2.new(0, 420, 0, 380)
         MainFrame.Position = UDim2.new(0.5, -210, 0.5, -190)
-        -- 调整内容区域
         NavFrame.Size = UDim2.new(0, 100, 1, 0)
         ContentArea.Size = UDim2.new(1, -101, 1, 0)
         ContentArea.Position = UDim2.new(0, 101, 0, 0)
-        -- 调整导航按钮大小
         for _, btn in ipairs(navButtons) do
             btn.button.Size = UDim2.new(1, -8, 0, 32)
             btn.button.Position = UDim2.new(0, 4, 0, 0)
         end
-        -- 调整玩家信息面板
         PlayerInfoPanel.Size = UDim2.new(0, 120, 0, 40)
         PlayerInfoPanel.Position = UDim2.new(0, 6, 1, -48)
         PIPAvatar.Size = UDim2.new(0, 26, 0, 26)
         PIPAvatar.Position = UDim2.new(0, 6, 0, 7)
         PIPDisplayName.TextSize = 10
         PIPUsername.TextSize = 8
-        -- 调整顶部信息
         InfoBox.Size = UDim2.new(0, 170, 0, 24)
         InfoBox.Position = UDim2.new(0, 110, 0, 6)
         AdminBadge.Size = UDim2.new(0, 70, 0, 24)
         AdminBadge.Position = UDim2.new(0, 285, 0, 6)
         AdminText.TextSize = 9
     else
-        -- 平板模式（默认）
         MainFrame.Size = UDim2.new(0, 580, 0, 440)
         MainFrame.Position = UDim2.new(0.5, -290, 0.5, -220)
         NavFrame.Size = UDim2.new(0, 135, 1, 0)
@@ -1911,7 +1884,6 @@ local function applyPanelSize(mode)
     end
 end
 
--- 设置页面内容
 local settingsItems = {
     {type = "select", name = "面板大小", desc = "切换平板/手机比例", icon = "📱", 
         options = {"平板", "手机"}, current = settingsData.panelSize,
@@ -1934,7 +1906,6 @@ local settingsItems = {
     {type = "info", name = "作者", desc = "CHANGCHENG66", icon = "👑"},
 }
 
--- 创建设置页面的选择器
 local function createSelectCard(parent, name, description, icon, options, currentValue, onSelect)
     local Card = Instance.new("Frame")
     Card.Size = UDim2.new(1, -16, 0, 52); Card.Position = UDim2.new(0, 8, 0, 0)
@@ -1959,7 +1930,6 @@ local function createSelectCard(parent, name, description, icon, options, curren
     DescText.Font = Enum.Font.Gotham; DescText.TextSize = 9; DescText.BackgroundTransparency = 1
     DescText.TextXAlignment = Enum.TextXAlignment.Left; DescText.ZIndex = 8; DescText.Parent = Card
     
-    -- 选择按钮容器
     local btnContainer = Instance.new("Frame")
     btnContainer.Size = UDim2.new(0, 120, 0, 22)
     btnContainer.Position = UDim2.new(1, -128, 0, 15)
@@ -1967,7 +1937,6 @@ local function createSelectCard(parent, name, description, icon, options, curren
     btnContainer.ZIndex = 8
     btnContainer.Parent = Card
     
-    local currentBtn = nil
     for i, opt in ipairs(options) do
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(0, 28, 0, 22)
@@ -1984,7 +1953,6 @@ local function createSelectCard(parent, name, description, icon, options, curren
         local btnCorner = Instance.new("UICorner"); btnCorner.CornerRadius = UDim.new(0, 4); btnCorner.Parent = btn
         
         btn.MouseButton1Click:Connect(function()
-            -- 更新所有按钮颜色
             for _, child in ipairs(btnContainer:GetChildren()) do
                 if child:IsA("TextButton") then
                     child.BackgroundColor3 = Color3.fromRGB(180, 180, 180)
@@ -2005,16 +1973,10 @@ local function createSelectCard(parent, name, description, icon, options, curren
                 btn.BackgroundColor3 = Color3.fromRGB(180, 180, 180)
             end
         end)
-        
-        if opt == currentValue then
-            currentBtn = btn
-        end
     end
-    
     return Card
 end
 
--- 创建信息卡片
 local function createInfoCard(parent, name, description, icon)
     local Card = Instance.new("Frame")
     Card.Size = UDim2.new(1, -16, 0, 46); Card.Position = UDim2.new(0, 8, 0, 0)
@@ -2041,14 +2003,23 @@ local function createInfoCard(parent, name, description, icon)
     return Card
 end
 
--- 添加设置页面到 pageContents
 pageContents["设置"] = {
     type = "settings",
     items = settingsItems
 }
+-- 第6段-A结束
+-- 主脚本 第6段-B：国内脚本 + 页面生成 + 打开/关闭动画 + 导航初始化
 
--- 覆盖 createInfoCard 和 createSelectCard 到页面生成循环里
--- 修改页面生成循环以支持设置页面
+pageContents["国内脚本"] = {
+    type = "buttons",
+    items = {
+        {name = "小皮脚本", desc = "拉完了", icon = "🇨🇳", url = "https://raw.githubusercontent.com/xiaopi77/xiaopi77/main/QQ1002100032-Roblox-Pi-script.lua"},
+        {name = "黑洞脚本", desc = "BS脚本", icon = "🕳️", url = "https://gitee.com/BS_script/script/raw/master/BS_Script.Luau"},
+        {name = "ROB脚本", desc = "ROB.V3", icon = "🤖", url = "https://raw.githubusercontent.com/idrobsc/rob_script/refs/heads/main/rob.v4"},
+        {name = "黄某脚本", desc = "拉完了缝合", icon = "😞", url = "https://rawscripts.net/raw/Universal-Script-HMscript-50384"},
+        {name = "Loarder脚本", desc = "拉完了", icon = "🤔", url = "https://raw.githubusercontent.com/Jilxi/123/refs/heads/main/Loader.lua"},
+    }
+}
 
 -- ============ 页面生成 ============
 for pageName, contentData in pairs(pageContents) do
@@ -2091,18 +2062,6 @@ for pageName, contentData in pairs(pageContents) do
         Page.CanvasSize = UDim2.new(0, 0, 0, n * 52 + 12)
     elseif contentData.type == "settings" then
         local n = 0
-        -- 刷新FPS信息
-        local function updateSettingsInfo()
-            for _, item in ipairs(contentData.items) do
-                if item.type == "info" and item.name == "FPS显示" then
-                    item.desc = "当前帧率: " .. tostring(currentFPS) .. " FPS"
-                end
-                if item.type == "info" and item.name == "执行次数" then
-                    item.desc = "已执行: " .. globalExecCount .. " 次"
-                end
-            end
-        end
-        -- 创建设置卡片
         for _, item in ipairs(contentData.items) do
             if item.type == "select" then
                 createSelectCard(Page, item.name, item.desc, item.icon, item.options, item.current, item.onSelect)
@@ -2112,12 +2071,10 @@ for pageName, contentData in pairs(pageContents) do
             n = n + 1
         end
         Page.CanvasSize = UDim2.new(0, 0, 0, n * 52 + 12)
-        -- 定时更新FPS信息
         spawn(function()
             while true do
                 wait(0.5)
                 if Page.Visible then
-                    -- 更新FPS信息卡片
                     for _, card in ipairs(Page:GetChildren()) do
                         if card:IsA("Frame") then
                             local descLabel = card:FindFirstChildOfClass("TextLabel")
@@ -2139,7 +2096,6 @@ for pageName, contentData in pairs(pageContents) do
     contentPages[pageName] = Page
 end
 
--- 默认显示公告
 contentPages["公告"].Visible = true
 
 -- ============ 打开/关闭动画 ============
@@ -2148,7 +2104,6 @@ local function openPanel()
     isOpen = true
     MainFrame.Size = UDim2.new(0, 0, 0, 0); MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     MainFrame.Visible = true
-    -- 应用当前设置的大小
     if settingsData.panelSize == "手机" then
         TweenService:Create(MainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 420, 0, 380), Position = UDim2.new(0.5, -210, 0.5, -190)}):Play()
     else
@@ -2165,10 +2120,8 @@ OpenBtn.MouseButton1Click:Connect(function()
 end)
 CloseButton.MouseButton1Click:Connect(function() closePanel() end)
 
--- 导航初始化
 selectNav(navButtons[1].button, "公告")
 
--- 清理跟随连接（安全退出）
 game:BindToClose(function()
     if followConnection then
         followConnection:disconnect()
@@ -2179,3 +2132,4 @@ end)
 print("黑脚本·管理员版 V1.5 加载完成！")
 print("作者: CHANGCHENG66")
 print("感谢使用！❤️")
+-- 第6段-B结束
