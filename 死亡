@@ -1,0 +1,215 @@
+-- 降落或死亡 脚本 v1.0.1
+-- WindUI蓝白版 | 自动安抚 | 坐标加速
+
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+if not WindUI then return end
+
+WindUI:AddTheme({
+    Name = "冰白",
+    Accent = "#80C0FF",
+    Outline = "#6090C0",
+    Text = "#FFFFFF",
+    Placeholder = "#D0E0FF",
+})
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local config = {
+    autoCalm = false,
+    useTeleport = true,
+    speedEnabled = false,
+    speedValue = 50,
+    calmDelay = 0.1,
+}
+
+local calmCount = 0
+
+local function getPassengers()
+    local plane = workspace:FindFirstChild("Plane")
+    if not plane then return nil end
+    return plane:FindFirstChild("Passengers")
+end
+
+local function getPassengerPosition(passenger)
+    if not passenger then return nil end
+    local part = passenger.PrimaryPart or 
+                 passenger:FindFirstChild("HumanoidRootPart") or 
+                 passenger:FindFirstChild("Torso") or 
+                 passenger:FindFirstChild("Head")
+    if part then return part.Position end
+    for _, child in pairs(passenger:GetDescendants()) do
+        if child:IsA("BasePart") then return child.Position end
+    end
+    return nil
+end
+
+local function calmAllPassengers()
+    local Passengers = getPassengers()
+    if not Passengers then return 0 end
+    
+    local character = LocalPlayer.Character
+    if not character then return 0 end
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return 0 end
+    
+    local Remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    if not Remotes then return 0 end
+    local TooltipAction = Remotes:FindFirstChild("TooltipAction")
+    if not TooltipAction then return 0 end
+    
+    local count = 0
+    for _, passenger in pairs(Passengers:GetChildren()) do
+        if passenger and passenger.Parent then
+            if config.useTeleport then
+                local pos = getPassengerPosition(passenger)
+                if pos then
+                    hrp.CFrame = CFrame.new(pos + Vector3.new(0, 2, 0))
+                    task.wait(0.05)
+                end
+            end
+            
+            for i = 1, 3 do
+                pcall(function()
+                    TooltipAction:FireServer("Talk to Passenger", passenger)
+                end)
+                task.wait(0.02)
+            end
+            count = count + 1
+        end
+    end
+    
+    calmCount = calmCount + count
+    return count
+end
+
+task.spawn(function()
+    while true do
+        if config.autoCalm then
+            calmAllPassengers()
+            task.wait(config.calmDelay)
+        else
+            task.wait(0.1)
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if config.speedEnabled then
+            local char = LocalPlayer.Character
+            if char then
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                local humanoid = char:FindFirstChildOfClass("Humanoid")
+                if hrp and humanoid then
+                    local moveDir = humanoid.MoveDirection
+                    if moveDir.Magnitude > 0.1 then
+                        local step = config.speedValue * 0.01
+                        hrp.Position = hrp.Position + moveDir * step
+                    end
+                end
+            end
+        end
+        task.wait()
+    end
+end)
+
+local Window = WindUI:CreateWindow({
+    Title = "黑脚本--降落或死亡",
+    Icon = "solar:moon-bold",
+    Size = UDim2.fromOffset(600, 350),
+    ToggleKey = Enum.KeyCode.RightShift,
+    Theme = "冰白",
+    Transparent = true,
+    ScrollBarEnabled = true,
+})
+
+Window:Tab({Title = "公告", Icon = "solar:info-circle-bold"}):Paragraph({
+    Title = "黑脚本--降落或死亡 v1.0.1",
+    Desc = "功能：自动安抚 | 坐标加速"
+})
+
+local MainTab = Window:Tab({Title = "主要功能", Icon = "solar:star-bold"})
+
+MainTab:Toggle({
+    Title = "自动安抚",
+    Value = false,
+    Callback = function(v)
+        config.autoCalm = v
+    end
+})
+
+MainTab:Toggle({
+    Title = "使用传送",
+    Desc = "开启：传送到乘客旁边再发包\n关闭：当光环直接发包",
+    Value = true,
+    Callback = function(v)
+        config.useTeleport = v
+    end
+})
+
+MainTab:Slider({
+    Title = "安抚间隔（秒）",
+    Value = {Min = 0.05, Max = 1, Default = 0.1},
+    Step = 0.05,
+    Callback = function(v)
+        config.calmDelay = v
+    end
+})
+
+MainTab:Divider()
+
+MainTab:Toggle({
+    Title = "坐标加速",
+    Value = false,
+    Callback = function(v)
+        config.speedEnabled = v
+    end
+})
+
+MainTab:Slider({
+    Title = "加速值 (1-100)",
+    Value = {Min = 1, Max = 100, Default = 50},
+    Step = 1,
+    Callback = function(v)
+        config.speedValue = v
+    end
+})
+
+local SettingsTab = Window:Tab({Title = "设置", Icon = "solar:settings-bold"})
+local statusPara = SettingsTab:Paragraph({Title = "功能状态", Desc = "加载中..."})
+
+task.spawn(function()
+    while true do
+        local status = ""
+        status = status .. "已安抚: " .. calmCount .. " 次\n"
+        status = status .. "预计收益: " .. (calmCount * 3) .. " 元\n"
+        status = status .. "自动安抚: " .. (config.autoCalm and "✅" or "❌") .. "\n"
+        status = status .. "传送模式: " .. (config.useTeleport and "✅" or "❌") .. "\n"
+        status = status .. "坐标加速: " .. (config.speedEnabled and "✅" or "❌") .. "\n"
+        status = status .. "加速值: " .. config.speedValue
+        statusPara:SetDesc(status)
+        task.wait(1)
+    end
+end)
+
+SettingsTab:Button({
+    Title = "重置统计",
+    Callback = function()
+        calmCount = 0
+        WindUI:Notify({Title = "统计", Content = "已重置", Duration = 2})
+    end
+})
+
+SettingsTab:Button({
+    Title = "关闭面板",
+    Callback = function() Window:Close() end
+})
+
+WindUI:Notify({
+    Title = "降落或死亡",
+    Content = "v1.0.1 加载完成",
+    Duration = 2
+})
