@@ -1762,6 +1762,7 @@ pageContents["服务器"] = {
         {name = "力量传奇", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/力量"},
         {name = "找出谁打了一巴掌", desc = "点击执行", icon = "🤲", url = "https://raw.githubusercontent.com/hgvuyguyg/sbqr/main/巴掌"},
         {name = "汉堡包", desc = "点击执行", icon = "🍔", url = "https://raw.githubusercontent.com/hgvuyguyg/sbqr/main/汉堡"},
+        {name = "机器人滑膛枪", desc = "点击执行", icon = "🤖", url = "https://raw.githubusercontent.com/hgvuyguyg/sbqr/main/机器人"},
     }
 }
 
