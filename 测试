@@ -388,15 +388,16 @@ InnerCorner.CornerRadius = UDim.new(0, 12)
 InnerCorner.Parent = InnerPanel
 
 local panelMode = "平板"
+local panelScale = 1
 
 local function applyPanelSize()
     if panelMode == "平板" then
-        MainFrame.Size = UDim2.new(0, 580, 0, 440)
-        MainFrame.Position = UDim2.new(0.5, -290, 0.5, -220)
+        MainFrame.Size = UDim2.new(0, 580 * panelScale, 0, 440 * panelScale)
+        MainFrame.Position = UDim2.new(0.5, -290 * panelScale, 0.5, -220 * panelScale)
         RGBOutline.Size = UDim2.new(1, 5, 1, 5)
     else
-        MainFrame.Size = UDim2.new(0, 500, 0, 400)
-        MainFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
+        MainFrame.Size = UDim2.new(0, 500 * panelScale, 0, 340 * panelScale)
+        MainFrame.Position = UDim2.new(0.5, -250 * panelScale, 0.5, -170 * panelScale)
         RGBOutline.Size = UDim2.new(1, 3, 1, 3)
     end
     if isRainbowBorder then
@@ -504,6 +505,7 @@ AdminText.BackgroundTransparency = 1
 AdminText.ZIndex = 13
 AdminText.Parent = AdminBadge
 
+-- 关闭脚本按钮（×）
 local CloseButton = Instance.new("TextButton")
 CloseButton.Size = UDim2.new(0, 28, 0, 28)
 CloseButton.Position = UDim2.new(1, -34, 0, 4)
@@ -520,6 +522,24 @@ CloseCorner.CornerRadius = UDim.new(1, 0)
 CloseCorner.Parent = CloseButton
 CloseButton.MouseEnter:Connect(function() CloseButton.BackgroundColor3 = Color3.fromRGB(200, 200, 200) end)
 CloseButton.MouseLeave:Connect(function() CloseButton.BackgroundColor3 = Color3.fromRGB(230, 230, 230) end)
+
+-- 缩放按钮（−）
+local ScaleButton = Instance.new("TextButton")
+ScaleButton.Size = UDim2.new(0, 28, 0, 28)
+ScaleButton.Position = UDim2.new(1, -68, 0, 4)
+ScaleButton.Text = "−"
+ScaleButton.TextColor3 = Color3.fromRGB(100, 100, 100)
+ScaleButton.Font = Enum.Font.GothamBold
+ScaleButton.TextSize = 20
+ScaleButton.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+ScaleButton.BorderSizePixel = 0
+ScaleButton.ZIndex = 11
+ScaleButton.Parent = TopBar
+local ScaleCorner = Instance.new("UICorner")
+ScaleCorner.CornerRadius = UDim.new(1, 0)
+ScaleCorner.Parent = ScaleButton
+ScaleButton.MouseEnter:Connect(function() ScaleButton.BackgroundColor3 = Color3.fromRGB(200, 200, 200) end)
+ScaleButton.MouseLeave:Connect(function() ScaleButton.BackgroundColor3 = Color3.fromRGB(230, 230, 230) end)
 
 local TopDivider = Instance.new("Frame")
 TopDivider.Size = UDim2.new(1, -24, 0, 1)
@@ -655,7 +675,7 @@ for _, item in ipairs(navItems) do
     NavButton.MouseLeave:Connect(function() if NavButton ~= selectedNav then NavButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255) end end)
     table.insert(navButtons, {button = NavButton, name = item.name})
 end
--- 主脚本 第2段：createButtonCard 函数
+-- 主脚本 第2段：createButtonCard
 
 local function createButtonCard(parent, name, desc, icon, url)
     local Card = Instance.new("Frame")
@@ -901,9 +921,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
                         if c and c:FindFirstChild("Humanoid") then c.Humanoid.Health = 99999 end
                     end)
                 end
--- 主脚本 第4段：createFeatureToggle 后半
-
-            elseif runCode == "teamglow" then
+elseif runCode == "teamglow" then
                 local myTeam = Players.LocalPlayer.Team
                 clearTeamGlow()
                 toggleConn = RunService.RenderStepped:Connect(function()
@@ -1042,10 +1060,9 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
             elseif runCode == "dance1" then
                 local c = Players.LocalPlayer.Character
                 if c and c:FindFirstChild("Humanoid") then
-                    local danceActive = true
                     local anim = Instance.new("Animation"); anim.AnimationId = "rbxassetid://5918726674"
                     local track = c.Humanoid:LoadAnimation(anim); track:Play()
-                    toggleConn = {Disconnect = function() danceActive = false; if track then track:Stop() end end}
+                    toggleConn = {Disconnect = function() if track then track:Stop() end end}
                 end
             elseif runCode == "fire" then
                 local c = Players.LocalPlayer.Character
@@ -1330,7 +1347,7 @@ local function createFeatureToggle(parent, name, description, icon, runCode)
         end
     end)
 end
--- 主脚本 第5段：createInputCard + createMusicCard + 公告 + 搜索框 + homePosition + 作者ESP
+-- 主脚本 第5段：createInputCard + createMusicCard + 公告 + homePosition + 作者ESP
 
 local function createInputCard(parent, name, description, icon, defaultValue, onExecute)
     local Card = Instance.new("Frame")
@@ -1469,8 +1486,11 @@ spawn(function()
     end
 end)
 
--- ============ 作者ESP（默认开启，透视名字为 CHANGCHENG66 的玩家，包括自己） ============
+-- ============ 作者ESP ============
+local authorEspEnabled = true
+
 local function addAuthorESP(p)
+    if not authorEspEnabled then return end
     if p.Name ~= "CHANGCHENG66" then return end
     if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end) end
     if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end) end
@@ -1509,27 +1529,32 @@ local function addAuthorESP(p)
     end
     
     if p.Character then s(p.Character) end
-    p.CharacterAdded:Connect(function(c) s(c) end)
+    p.CharacterAdded:Connect(function(c) if authorEspEnabled then s(c) end end)
 end
 
-local function enableESP()
-    espEnabled = true
-    for _, p in ipairs(Players:GetPlayers()) do addAuthorESP(p) end
-    Players.PlayerAdded:Connect(function(p) addAuthorESP(p) end)
-    Players.PlayerRemoving:Connect(function(p)
-        if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end); espHighlights[p] = nil end
-        if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end); espBillboards[p] = nil end
-    end)
+local function refreshAuthorESP()
+    clearESP()
+    if authorEspEnabled then
+        for _, p in ipairs(Players:GetPlayers()) do addAuthorESP(p) end
+    end
 end
 
-enableESP()
+function enableAuthorESP()
+    authorEspEnabled = true
+    refreshAuthorESP()
+end
 
--- ============ 搜索框相关 ============
-local searchResults = {}
-local searchResultContainer = nil
-local searchBox = nil
+function disableAuthorESP()
+    authorEspEnabled = false
+    clearESP()
+end
 
--- 搜索功能在页面生成时创建，见第6段
+for _, p in ipairs(Players:GetPlayers()) do addAuthorESP(p) end
+Players.PlayerAdded:Connect(function(p) if authorEspEnabled then addAuthorESP(p) end end)
+Players.PlayerRemoving:Connect(function(p)
+    if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end); espHighlights[p] = nil end
+    if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end); espBillboards[p] = nil end
+end)
 -- 主脚本 第6段：pageContents 全部页面数据（公告、通用、战斗、整活、音乐）
 
 local pageContents = {
@@ -1637,7 +1662,7 @@ local pageContents = {
         }
     },
 }
--- 主脚本 第7段：pageContents 剩余页面 + 页面生成 + 搜索框 + 彩虹色按钮
+-- 主脚本 第7段：pageContents 剩余页面（甩飞、服务器、国内脚本）+ 页面生成 + 搜索框（可直接执行）
 
 pageContents["甩飞"] = {
     type = "buttons",
@@ -1801,7 +1826,6 @@ for pageName, contentData in pairs(pageContents) do
     TopSpacer.Size = UDim2.new(1, 0, 0, 6); TopSpacer.BackgroundTransparency = 1; TopSpacer.Parent = Page
     
     if pageName == "公告" then
-        -- 搜索框
         local searchFrame = Instance.new("Frame")
         searchFrame.Size = UDim2.new(1, -16, 0, 36)
         searchFrame.Position = UDim2.new(0, 8, 0, 6)
@@ -1833,7 +1857,6 @@ for pageName, contentData in pairs(pageContents) do
         searchBox.ZIndex = 9
         searchBox.Parent = searchFrame
         
-        -- 公告文本
         announcementTextBox = Instance.new("TextLabel")
         announcementTextBox.Size = UDim2.new(1, -20, 0, 440)
         announcementTextBox.Position = UDim2.new(0, 10, 0, 48)
@@ -1850,7 +1873,6 @@ for pageName, contentData in pairs(pageContents) do
         Page.CanvasSize = UDim2.new(0, 0, 0, 500)
         updateTime()
         
-        -- 搜索结果容器（带UIListLayout）
         local searchResultContainer = Instance.new("ScrollingFrame")
         searchResultContainer.Size = UDim2.new(1, -16, 0, 0)
         searchResultContainer.Position = UDim2.new(0, 8, 0, 48)
@@ -1955,7 +1977,7 @@ for pageName, contentData in pairs(pageContents) do
                 local goBtn = Instance.new("TextButton")
                 goBtn.Size = UDim2.new(0, 50, 0, 22)
                 goBtn.Position = UDim2.new(1, -56, 0, 11)
-                goBtn.Text = "前往"
+                goBtn.Text = "执行"
                 goBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
                 goBtn.Font = Enum.Font.GothamBold
                 goBtn.TextSize = 10
@@ -1968,58 +1990,38 @@ for pageName, contentData in pairs(pageContents) do
                 goCorner.CornerRadius = UDim.new(0, 5)
                 goCorner.Parent = goBtn
                 goBtn.MouseButton1Click:Connect(function()
-                    for _, nav in ipairs(navButtons) do
-                        if nav.name == item.page then
-                            selectNav(nav.button, item.page)
-                            searchBox.Text = ""
-                            searchResultContainer.Visible = false
-                            searchResultContainer.Size = UDim2.new(1, -16, 0, 0)
-                            announcementTextBox.Visible = true
-                            break
+                    goBtn.BackgroundColor3 = Color3.fromRGB(76, 175, 80)
+                    if item.type == "button" then
+                        if item.data.url == "teleport" or item.data.url == "follow" then
+                            for _, nav in ipairs(navButtons) do
+                                if nav.name == item.page then
+                                    selectNav(nav.button, item.page)
+                                    break
+                                end
+                            end
+                        elseif item.data.url == "home" then
+                            if homePosition then
+                                local c = Players.LocalPlayer.Character
+                                if c and c:FindFirstChild("HumanoidRootPart") then
+                                    c.HumanoidRootPart.CFrame = homePosition
+                                end
+                            end
+                        else
+                            task.spawn(function() pcall(function() loadstring(game:HttpGet(item.data.url))() end) end)
                         end
-                    end
-                end)
-            end
-        end
-        
-        searchBox.FocusLost:Connect(function(enterPressed)
-            if enterPressed then doSearch(searchBox.Text) end
-        end)
-        
-        UserInputService.InputBegan:Connect(function(input, gp)
-            if gp then return end
-            if input.KeyCode == Enum.KeyCode.Space and searchBox:IsFocused() then
-                doSearch(searchBox.Text)
-            end
-        end)
-        
-    elseif contentData.type == "toggles" then
-        local n = 0
-        for _, item in ipairs(contentData.items) do
-            if item.type == "button" then createButtonCard(Page, item.name, item.desc, item.icon, item.url)
-            elseif item.type == "toggle" then createFeatureToggle(Page, item.name, item.desc, item.icon, item.code)
-            elseif item.type == "input" then createInputCard(Page, item.name, item.desc, item.icon, item.default, item.execute) end
-            n = n + 1
-        end
-        Page.CanvasSize = UDim2.new(0, 0, 0, n * 52 + 12)
-    elseif contentData.type == "buttons" then
-        local n = 0
-        for _, item in ipairs(contentData.items) do
-            createButtonCard(Page, item.name, item.desc, item.icon, item.url); n = n + 1
-        end
-        Page.CanvasSize = UDim2.new(0, 0, 0, n * 52 + 12)
-    elseif contentData.type == "music" then
-        local n = 0
-        for _, item in ipairs(contentData.items) do
-            createMusicCard(Page, item.name, item.desc, item.icon, item.soundId); n = n + 1
-        end
-        Page.CanvasSize = UDim2.new(0, 0, 0, n * 52 + 12)
-    end
-    contentPages[pageName] = Page
-end
--- 主脚本 第8段：设置页功能 + 打开/关闭动画 + 导航初始化 + 结尾
+                    elseif item.type == "toggle" then
+                        local code = item.data.code
+                        if code == "god" then
+                            local c = Players.LocalPlayer.Character
+                            if c and c:FindFirstChild("Humanoid") then c.Humanoid.MaxHealth = 99999; c.Humanoid.Health = 99999 end
+                        elseif code == "superspeed" then
+                            local c = Players.LocalPlayer.Character
+                            if c and c:FindFirstChild("Humanoid") then c.Humanoid.WalkSpeed = 1000 end
+                        elseif code == "fulllight" then
+                            Lighting.Brightness = 5; Lighting.ClockTime = 14; Lighting.FogEnd = 100000
+                        elseif code == "clearfog"
+-- 主脚本 第8段：设置页 + 关闭脚本验证 + 缩放按钮 + 打开/关闭动画
 
--- 创建设置页
 local settingsPage = Instance.new("ScrollingFrame")
 settingsPage.Size = UDim2.new(1, 0, 1, 0); settingsPage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 settingsPage.BorderSizePixel = 0; settingsPage.ScrollBarThickness = 3; settingsPage.ScrollBarImageColor3 = Color3.fromRGB(200, 200, 200)
@@ -2028,10 +2030,10 @@ local settingsList = Instance.new("UIListLayout"); settingsList.Padding = UDim.n
 local settingsSpacer = Instance.new("Frame"); settingsSpacer.Size = UDim2.new(1, 0, 0, 6); settingsSpacer.BackgroundTransparency = 1; settingsSpacer.Parent = settingsPage
 contentPages["设置"] = settingsPage
 
--- 设置项（只有边框颜色 + 面板比例，删掉FPS）
 local settingsItems = {
     {type = "color", name = "边框颜色", desc = "切换面板边框颜色（含彩虹）", icon = "🎨", colors = {"金色", "红色", "蓝色", "绿色", "紫色", "粉色", "青色", "白色", "彩虹色"}},
     {type = "size", name = "面板比例", desc = "切换平板/手机尺寸", icon = "📱", modes = {"平板", "手机"}},
+    {type = "toggle", name = "透视作者", desc = "开启或关闭作者ESP", icon = "👑", code = "authoresp"},
 }
 
 local function createSettingsCard(parent, item)
@@ -2144,6 +2146,94 @@ local function createSettingsCard(parent, item)
                 end
             end)
         end
+        
+    elseif item.type == "toggle" then
+        local isOn = false
+        if item.code == "authoresp" then isOn = authorEspEnabled end
+        
+        local Toggle = Instance.new("TextButton")
+        Toggle.Size = UDim2.new(0, 36, 0, 20); Toggle.Position = UDim2.new(1, -46, 0, 13)
+        Toggle.BackgroundColor3 = isOn and Color3.fromRGB(255, 140, 0) or Color3.fromRGB(200, 200, 200)
+        Toggle.Text = ""; Toggle.BorderSizePixel = 0; Toggle.ZIndex = 8; Toggle.AutoButtonColor = false; Toggle.Parent = Card
+        local ToggleCorner = Instance.new("UICorner"); ToggleCorner.CornerRadius = UDim.new(1, 0); ToggleCorner.Parent = Toggle
+        local ToggleKnob = Instance.new("Frame")
+        ToggleKnob.Size = UDim2.new(0, 16, 0, 16)
+        ToggleKnob.Position = isOn and UDim2.new(1, -18, 0, 2) or UDim2.new(0, 2, 0, 2)
+        ToggleKnob.BackgroundColor3 = Color3.fromRGB(255, 255, 255); ToggleKnob.BorderSizePixel = 0; ToggleKnob.ZIndex = 9; ToggleKnob.Parent = Toggle
+        local KnobCorner = Instance.new("UICorner"); KnobCorner.CornerRadius = UDim.new(1, 0); KnobCorner.Parent = ToggleKnob
+        
+        Toggle.MouseButton1Click:Connect(function()
+            if item.code == "authoresp" and isOn == true then
+                -- 二次验证
+                local confirmGui = Instance.new("ScreenGui")
+                confirmGui.Parent = PlayerGui
+                local bg = Instance.new("Frame")
+                bg.Size = UDim2.new(1, 0, 1, 0)
+                bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+                bg.BackgroundTransparency = 0.5
+                bg.ZIndex = 999
+                bg.Parent = confirmGui
+                local popup = Instance.new("Frame")
+                popup.Size = UDim2.new(0, 320, 0, 180)
+                popup.Position = UDim2.new(0.5, -160, 0.5, -90)
+                popup.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                popup.BorderSizePixel = 0
+                popup.ZIndex = 1000
+                popup.Parent = confirmGui
+                local popupCorner = Instance.new("UICorner"); popupCorner.CornerRadius = UDim.new(0, 12); popupCorner.Parent = popup
+                local title = Instance.new("TextLabel")
+                title.Size = UDim2.new(1, 0, 0, 40); title.Position = UDim2.new(0, 0, 0, 10)
+                title.Text = "确认关闭"; title.TextColor3 = Color3.fromRGB(255, 255, 255)
+                title.Font = Enum.Font.GothamBold; title.TextSize = 18; title.BackgroundTransparency = 1
+                title.ZIndex = 1001; title.Parent = popup
+                local desc = Instance.new("TextLabel")
+                desc.Size = UDim2.new(1, -20, 0, 40); desc.Position = UDim2.new(0, 10, 0, 50)
+                desc.Text = "二次验证：请输入数字 1 或 2"
+                desc.TextColor3 = Color3.fromRGB(200, 200, 200)
+                desc.Font = Enum.Font.Gotham; desc.TextSize = 14; desc.BackgroundTransparency = 1
+                desc.ZIndex = 1001; desc.Parent = popup
+                local btn1 = Instance.new("TextButton")
+                btn1.Size = UDim2.new(0, 80, 0, 40); btn1.Position = UDim2.new(0.5, -90, 0, 110)
+                btn1.Text = "1"; btn1.TextColor3 = Color3.fromRGB(255, 255, 255)
+                btn1.Font = Enum.Font.GothamBold; btn1.TextSize = 20; btn1.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+                btn1.BorderSizePixel = 0; btn1.ZIndex = 1001; btn1.AutoButtonColor = false; btn1.Parent = popup
+                local btn1Corner = Instance.new("UICorner"); btn1Corner.CornerRadius = UDim.new(0, 8); btn1Corner.Parent = btn1
+                local btn2 = Instance.new("TextButton")
+                btn2.Size = UDim2.new(0, 80, 0, 40); btn2.Position = UDim2.new(0.5, 10, 0, 110)
+                btn2.Text = "2"; btn2.TextColor3 = Color3.fromRGB(255, 255, 255)
+                btn2.Font = Enum.Font.GothamBold; btn2.TextSize = 20; btn2.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+                btn2.BorderSizePixel = 0; btn2.ZIndex = 1001; btn2.AutoButtonColor = false; btn2.Parent = popup
+                local btn2Corner = Instance.new("UICorner"); btn2Corner.CornerRadius = UDim.new(0, 8); btn2Corner.Parent = btn2
+                local resultLabel = Instance.new("TextLabel")
+                resultLabel.Size = UDim2.new(1, -20, 0, 30); resultLabel.Position = UDim2.new(0, 10, 0, 155)
+                resultLabel.Text = ""; resultLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                resultLabel.Font = Enum.Font.Gotham; resultLabel.TextSize = 12; resultLabel.BackgroundTransparency = 1
+                resultLabel.ZIndex = 1001; resultLabel.Parent = popup
+                btn1.MouseButton1Click:Connect(function()
+                    resultLabel.Text = "验证成功，已关闭透视作者"
+                    resultLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+                    isOn = false
+                    Toggle.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+                    ToggleKnob:TweenPosition(UDim2.new(0, 2, 0, 2), "Out", "Quad", 0.15)
+                    disableAuthorESP()
+                    wait(0.8)
+                    confirmGui:Destroy()
+                end)
+                btn2.MouseButton1Click:Connect(function()
+                    resultLabel.Text = "验证失败，关闭此功能失败"
+                    resultLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                    wait(0.8)
+                    confirmGui:Destroy()
+                end)
+                return
+            end
+            if item.code == "authoresp" then
+                isOn = not isOn
+                Toggle.BackgroundColor3 = isOn and Color3.fromRGB(255, 140, 0) or Color3.fromRGB(200, 200, 200)
+                ToggleKnob:TweenPosition(isOn and UDim2.new(1, -18, 0, 2) or UDim2.new(0, 2, 0, 2), "Out", "Quad", 0.15)
+                if isOn then enableAuthorESP() else disableAuthorESP() end
+            end
+        end)
     end
 end
 
@@ -2152,7 +2242,118 @@ for _, item in ipairs(settingsItems) do
 end
 settingsPage.CanvasSize = UDim2.new(0, 0, 0, #settingsItems * 52 + 12)
 
--- 打开/关闭动画
+-- ============ 缩放按钮功能 ============
+local scaleStep = 0.1
+local minScale = 0.6
+local maxScale = 1.4
+
+ScaleButton.MouseButton1Click:Connect(function()
+    panelScale = panelScale - scaleStep
+    if panelScale < minScale then panelScale = maxScale end
+    applyPanelSize()
+end)
+
+-- ============ 关闭脚本验证 ============
+CloseButton.MouseButton1Click:Connect(function()
+    local confirmGui = Instance.new("ScreenGui")
+    confirmGui.Parent = PlayerGui
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    bg.BackgroundTransparency = 0.5
+    bg.ZIndex = 999
+    bg.Parent = confirmGui
+    
+    local popup = Instance.new("Frame")
+    popup.Size = UDim2.new(0, 320, 0, 180)
+    popup.Position = UDim2.new(0.5, -160, 0.5, -90)
+    popup.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    popup.BorderSizePixel = 0
+    popup.ZIndex = 1000
+    popup.Parent = confirmGui
+    local popupCorner = Instance.new("UICorner"); popupCorner.CornerRadius = UDim.new(0, 12); popupCorner.Parent = popup
+    
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 40); title.Position = UDim2.new(0, 0, 0, 10)
+    title.Text = "确认关闭脚本"; title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.Font = Enum.Font.GothamBold; title.TextSize = 18; title.BackgroundTransparency = 1
+    title.ZIndex = 1001; title.Parent = popup
+    
+    local desc = Instance.new("TextLabel")
+    desc.Size = UDim2.new(1, -20, 0, 40); desc.Position = UDim2.new(0, 10, 0, 50)
+    desc.Text = "确定要关闭黑脚本吗？"
+    desc.TextColor3 = Color3.fromRGB(200, 200, 200)
+    desc.Font = Enum.Font.Gotham; desc.TextSize = 14; desc.BackgroundTransparency = 1
+    desc.ZIndex = 1001; desc.Parent = popup
+    
+    local btn1 = Instance.new("TextButton")
+    btn1.Size = UDim2.new(0, 80, 0, 40); btn1.Position = UDim2.new(0.5, -90, 0, 110)
+    btn1.Text = "确定"; btn1.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn1.Font = Enum.Font.GothamBold; btn1.TextSize = 14; btn1.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+    btn1.BorderSizePixel = 0; btn1.ZIndex = 1001; btn1.AutoButtonColor = false; btn1.Parent = popup
+    local btn1Corner = Instance.new("UICorner"); btn1Corner.CornerRadius = UDim.new(0, 8); btn1Corner.Parent = btn1
+    
+    local btn2 = Instance.new("TextButton")
+    btn2.Size = UDim2.new(0, 80, 0, 40); btn2.Position = UDim2.new(0.5, 10, 0, 110)
+    btn2.Text = "取消"; btn2.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn2.Font = Enum.Font.GothamBold; btn2.TextSize = 14; btn2.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    btn2.BorderSizePixel = 0; btn2.ZIndex = 1001; btn2.AutoButtonColor = false; btn2.Parent = popup
+    local btn2Corner = Instance.new("UICorner"); btn2Corner.CornerRadius = UDim.new(0, 8); btn2Corner.Parent = btn2
+    
+    local resultLabel = Instance.new("TextLabel")
+    resultLabel.Size = UDim2.new(1, -20, 0, 30); resultLabel.Position = UDim2.new(0, 10, 0, 155)
+    resultLabel.Text = ""; resultLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    resultLabel.Font = Enum.Font.Gotham; resultLabel.TextSize = 12; resultLabel.BackgroundTransparency = 1
+    resultLabel.ZIndex = 1001; resultLabel.Parent = popup
+    
+    btn2.MouseButton1Click:Connect(function()
+        confirmGui:Destroy()
+    end)
+    
+    btn1.MouseButton1Click:Connect(function()
+        -- 二次验证
+        resultLabel.Text = ""
+        local step2 = Instance.new("TextLabel")
+        step2.Size = UDim2.new(1, -20, 0, 30); step2.Position = UDim2.new(0, 10, 0, 50)
+        step2.Text = "二次验证：请输入 1 或 2"
+        step2.TextColor3 = Color3.fromRGB(200, 200, 200)
+        step2.Font = Enum.Font.Gotham; step2.TextSize = 14; step2.BackgroundTransparency = 1
+        step2.ZIndex = 1001; step2.Parent = popup
+        desc.Visible = false
+        
+        local vbtn1 = Instance.new("TextButton")
+        vbtn1.Size = UDim2.new(0, 80, 0, 40); vbtn1.Position = UDim2.new(0.5, -90, 0, 110)
+        vbtn1.Text = "1"; vbtn1.TextColor3 = Color3.fromRGB(255, 255, 255)
+        vbtn1.Font = Enum.Font.GothamBold; vbtn1.TextSize = 20; vbtn1.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+        vbtn1.BorderSizePixel = 0; vbtn1.ZIndex = 1001; vbtn1.AutoButtonColor = false; vbtn1.Parent = popup
+        local vbtn1Corner = Instance.new("UICorner"); vbtn1Corner.CornerRadius = UDim.new(0, 8); vbtn1Corner.Parent = vbtn1
+        
+        local vbtn2 = Instance.new("TextButton")
+        vbtn2.Size = UDim2.new(0, 80, 0, 40); vbtn2.Position = UDim2.new(0.5, 10, 0, 110)
+        vbtn2.Text = "2"; vbtn2.TextColor3 = Color3.fromRGB(255, 255, 255)
+        vbtn2.Font = Enum.Font.GothamBold; vbtn2.TextSize = 20; vbtn2.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        vbtn2.BorderSizePixel = 0; vbtn2.ZIndex = 1001; vbtn2.AutoButtonColor = false; vbtn2.Parent = popup
+        local vbtn2Corner = Instance.new("UICorner"); vbtn2Corner.CornerRadius = UDim.new(0, 8); vbtn2Corner.Parent = vbtn2
+        
+        btn1.Visible = false
+        btn2.Visible = false
+        
+        vbtn1.MouseButton1Click:Connect(function()
+            resultLabel.Text = "验证失败，无法关闭脚本"
+            resultLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+            wait(0.8)
+            confirmGui:Destroy()
+        end)
+        
+        vbtn2.MouseButton1Click:Connect(function()
+            confirmGui:Destroy()
+            -- 关闭整个脚本
+            if ScreenGui then ScreenGui:Destroy() end
+        end)
+    end)
+end)
+
+-- ============ 打开/关闭动画 ============
 contentPages["公告"].Visible = true
 local isOpen = false
 
@@ -2179,7 +2380,6 @@ end
 OpenBtn.MouseButton1Click:Connect(function()
     if isOpen then closePanel() else openPanel() end
 end)
-CloseButton.MouseButton1Click:Connect(function() closePanel() end)
 selectNav(navButtons[1].button, "公告")
 
 print("黑脚本·管理员版 V2.0 已加载完成")
