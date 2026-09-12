@@ -1662,7 +1662,7 @@ local pageContents = {
         }
     },
 }
--- 主脚本 第7段：pageContents 剩余页面（甩飞、服务器、国内脚本）+ 页面生成 + 搜索框（可直接执行）
+-- 主脚本 第7段-A：pageContents 剩余页面（甩飞、服务器、国内脚本）
 
 pageContents["甩飞"] = {
     type = "buttons",
@@ -1790,6 +1790,7 @@ pageContents["国内脚本"] = {
         {name = "Loarder脚本", desc = "拉完了", icon = "🤔", url = "https://raw.githubusercontent.com/Jilxi/123/refs/heads/main/Loader.lua"},
     }
 }
+-- 主脚本 第7段-B：收集功能项 + 页面生成 + 搜索框（可直接执行）
 
 -- 存储所有功能项用于搜索
 local allFunctionItems = {}
@@ -1824,8 +1825,9 @@ for pageName, contentData in pairs(pageContents) do
     local PageList = Instance.new("UIListLayout"); PageList.Padding = UDim.new(0, 6); PageList.Parent = Page
     local TopSpacer = Instance.new("Frame")
     TopSpacer.Size = UDim2.new(1, 0, 0, 6); TopSpacer.BackgroundTransparency = 1; TopSpacer.Parent = Page
-    
+
     if pageName == "公告" then
+        -- 搜索框
         local searchFrame = Instance.new("Frame")
         searchFrame.Size = UDim2.new(1, -16, 0, 36)
         searchFrame.Position = UDim2.new(0, 8, 0, 6)
@@ -1836,7 +1838,7 @@ for pageName, contentData in pairs(pageContents) do
         local searchCorner = Instance.new("UICorner")
         searchCorner.CornerRadius = UDim.new(0, 8)
         searchCorner.Parent = searchFrame
-        
+
         local searchIcon = Instance.new("TextLabel")
         searchIcon.Size = UDim2.new(0, 30, 1, 0)
         searchIcon.Text = "🔍"
@@ -1844,7 +1846,7 @@ for pageName, contentData in pairs(pageContents) do
         searchIcon.BackgroundTransparency = 1
         searchIcon.ZIndex = 9
         searchIcon.Parent = searchFrame
-        
+
         local searchBox = Instance.new("TextBox")
         searchBox.Size = UDim2.new(1, -34, 1, 0)
         searchBox.Position = UDim2.new(0, 34, 0, 0)
@@ -1856,7 +1858,8 @@ for pageName, contentData in pairs(pageContents) do
         searchBox.BackgroundTransparency = 1
         searchBox.ZIndex = 9
         searchBox.Parent = searchFrame
-        
+
+        -- 公告文本
         announcementTextBox = Instance.new("TextLabel")
         announcementTextBox.Size = UDim2.new(1, -20, 0, 440)
         announcementTextBox.Position = UDim2.new(0, 10, 0, 48)
@@ -1872,7 +1875,8 @@ for pageName, contentData in pairs(pageContents) do
         announcementTextBox.Parent = Page
         Page.CanvasSize = UDim2.new(0, 0, 0, 500)
         updateTime()
-        
+
+        -- 搜索结果容器
         local searchResultContainer = Instance.new("ScrollingFrame")
         searchResultContainer.Size = UDim2.new(1, -16, 0, 0)
         searchResultContainer.Position = UDim2.new(0, 8, 0, 48)
@@ -1882,11 +1886,11 @@ for pageName, contentData in pairs(pageContents) do
         searchResultContainer.Visible = false
         searchResultContainer.ZIndex = 8
         searchResultContainer.Parent = Page
-        
+
         local resultLayout = Instance.new("UIListLayout")
         resultLayout.Padding = UDim.new(0, 4)
         resultLayout.Parent = searchResultContainer
-        
+
         local function doSearch(query)
             for _, child in ipairs(searchResultContainer:GetChildren()) do
                 if child ~= resultLayout then child:Destroy() end
@@ -1899,7 +1903,7 @@ for pageName, contentData in pairs(pageContents) do
             end
             announcementTextBox.Visible = false
             searchResultContainer.Visible = true
-            
+
             local results = {}
             local lowerQuery = query:lower()
             for _, item in ipairs(allFunctionItems) do
@@ -1907,7 +1911,7 @@ for pageName, contentData in pairs(pageContents) do
                     table.insert(results, item)
                 end
             end
-            
+
             if #results == 0 then
                 local noResult = Instance.new("TextLabel")
                 noResult.Size = UDim2.new(1, 0, 0, 40)
@@ -1922,11 +1926,11 @@ for pageName, contentData in pairs(pageContents) do
                 searchResultContainer.CanvasSize = UDim2.new(0, 0, 0, 40)
                 return
             end
-            
+
             local totalHeight = #results * 48 + 10
             searchResultContainer.Size = UDim2.new(1, -16, 0, math.min(totalHeight, 300))
             searchResultContainer.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
-            
+
             for _, item in ipairs(results) do
                 local resultCard = Instance.new("Frame")
                 resultCard.Size = UDim2.new(1, 0, 0, 44)
@@ -1941,7 +1945,7 @@ for pageName, contentData in pairs(pageContents) do
                 stroke.Color = Color3.fromRGB(220, 220, 220)
                 stroke.Thickness = 1
                 stroke.Parent = resultCard
-                
+
                 local iconLbl = Instance.new("TextLabel")
                 iconLbl.Size = UDim2.new(0, 30, 1, 0)
                 iconLbl.Text = item.icon
@@ -1949,7 +1953,7 @@ for pageName, contentData in pairs(pageContents) do
                 iconLbl.BackgroundTransparency = 1
                 iconLbl.ZIndex = 10
                 iconLbl.Parent = resultCard
-                
+
                 local nameLbl = Instance.new("TextLabel")
                 nameLbl.Size = UDim2.new(0, 180, 0, 16)
                 nameLbl.Position = UDim2.new(0, 34, 0, 4)
@@ -1961,7 +1965,7 @@ for pageName, contentData in pairs(pageContents) do
                 nameLbl.TextXAlignment = Enum.TextXAlignment.Left
                 nameLbl.ZIndex = 10
                 nameLbl.Parent = resultCard
-                
+
                 local pageLbl = Instance.new("TextLabel")
                 pageLbl.Size = UDim2.new(0, 100, 0, 14)
                 pageLbl.Position = UDim2.new(0, 34, 0, 22)
@@ -1973,7 +1977,7 @@ for pageName, contentData in pairs(pageContents) do
                 pageLbl.TextXAlignment = Enum.TextXAlignment.Left
                 pageLbl.ZIndex = 10
                 pageLbl.Parent = resultCard
-                
+
                 local goBtn = Instance.new("TextButton")
                 goBtn.Size = UDim2.new(0, 50, 0, 22)
                 goBtn.Position = UDim2.new(1, -56, 0, 11)
@@ -1989,6 +1993,7 @@ for pageName, contentData in pairs(pageContents) do
                 local goCorner = Instance.new("UICorner")
                 goCorner.CornerRadius = UDim.new(0, 5)
                 goCorner.Parent = goBtn
+
                 goBtn.MouseButton1Click:Connect(function()
                     goBtn.BackgroundColor3 = Color3.fromRGB(76, 175, 80)
                     if item.type == "button" then
@@ -2019,7 +2024,58 @@ for pageName, contentData in pairs(pageContents) do
                             if c and c:FindFirstChild("Humanoid") then c.Humanoid.WalkSpeed = 1000 end
                         elseif code == "fulllight" then
                             Lighting.Brightness = 5; Lighting.ClockTime = 14; Lighting.FogEnd = 100000
-                        elseif code == "clearfog"
+                        elseif code == "clearfog" then
+                            Lighting.FogEnd = 100000; Lighting.FogStart = 50000
+                        else
+                            for _, nav in ipairs(navButtons) do
+                                if nav.name == item.page then
+                                    selectNav(nav.button, item.page)
+                                    break
+                                end
+                            end
+                        end
+                    end
+                    wait(0.3)
+                    goBtn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+                end)
+            end
+        end
+
+        searchBox.FocusLost:Connect(function(enterPressed)
+            if enterPressed then doSearch(searchBox.Text) end
+        end)
+
+        UserInputService.InputBegan:Connect(function(input, gp)
+            if gp then return end
+            if input.KeyCode == Enum.KeyCode.Space and searchBox:IsFocused() then
+                doSearch(searchBox.Text)
+            end
+        end)
+
+    elseif contentData.type == "toggles" then
+        local n = 0
+        for _, item in ipairs(contentData.items) do
+            if item.type == "button" then createButtonCard(Page, item.name, item.desc, item.icon, item.url)
+            elseif item.type == "toggle" then createFeatureToggle(Page, item.name, item.desc, item.icon, item.code)
+            elseif item.type == "input" then createInputCard(Page, item.name, item.desc, item.icon, item.default, item.execute) end
+            n = n + 1
+        end
+        Page.CanvasSize = UDim2.new(0, 0, 0, n * 52 + 12)
+    elseif contentData.type == "buttons" then
+        local n = 0
+        for _, item in ipairs(contentData.items) do
+            createButtonCard(Page, item.name, item.desc, item.icon, item.url); n = n + 1
+        end
+        Page.CanvasSize = UDim2.new(0, 0, 0, n * 52 + 12)
+    elseif contentData.type == "music" then
+        local n = 0
+        for _, item in ipairs(contentData.items) do
+            createMusicCard(Page, item.name, item.desc, item.icon, item.soundId); n = n + 1
+        end
+        Page.CanvasSize = UDim2.new(0, 0, 0, n * 52 + 12)
+    end
+    contentPages[pageName] = Page
+end
 -- 主脚本 第8段：设置页 + 关闭脚本验证 + 缩放按钮 + 打开/关闭动画
 
 local settingsPage = Instance.new("ScrollingFrame")
