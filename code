@@ -384,20 +384,28 @@ local function applyPanelSize()
         AdminBadge.Position = UDim2.new(0, 359, 0, 3)
         AdminText.Text = "👑 管理员版本"
         AdminText.TextSize = 11
+        TopBar.Size = UDim2.new(1, 0, 0, 36)
+        TopDivider.Position = UDim2.new(0, 12, 0, 36)
+        MainContentContainer.Position = UDim2.new(0, 0, 0, 36)
+        MainContentContainer.Size = UDim2.new(1, 0, 1, -36)
     else
         MainFrame.Size = UDim2.new(0, 500, 0, 340)
         MainFrame.Position = UDim2.new(0.5, -250, 0.5, -170)
         RGBOutline.Size = UDim2.new(1, 3, 1, 3)
         TitleLabel.Size = UDim2.new(0, 100, 1, 0)
         TitleLabel.Position = UDim2.new(0, 10, 0, 0)
-        TitleLabel.TextSize = 14
-        InfoBox.Size = UDim2.new(0, 190, 0, 26)
-        InfoBox.Position = UDim2.new(0, 115, 0, 5)
-        InfoLabel.TextSize = 9
-        AdminBadge.Size = UDim2.new(0, 75, 0, 26)
-        AdminBadge.Position = UDim2.new(0, 310, 0, 5)
+        TitleLabel.TextSize = 13
+        InfoBox.Size = UDim2.new(0, 180, 0, 24)
+        InfoBox.Position = UDim2.new(0, 100, 0, 4)
+        InfoLabel.TextSize = 8
+        AdminBadge.Size = UDim2.new(0, 68, 0, 24)
+        AdminBadge.Position = UDim2.new(0, 290, 0, 4)
         AdminText.Text = "👑 管理员"
-        AdminText.TextSize = 10
+        AdminText.TextSize = 9
+        TopBar.Size = UDim2.new(1, 0, 0, 32)
+        TopDivider.Position = UDim2.new(0, 12, 0, 32)
+        MainContentContainer.Position = UDim2.new(0, 0, 0, 32)
+        MainContentContainer.Size = UDim2.new(1, 0, 1, -32)
     end
     if isRainbowBorder then
     else
@@ -1340,215 +1348,7 @@ elseif runCode == "teamglow" then
             end
         end
     end)
-end
--- 第5段
-
-local function createInputCard(parent, name, description, icon, defaultValue, onExecute)
-    local Card = Instance.new("Frame")
-    Card.Size = UDim2.new(1, -16, 0, 46); Card.Position = UDim2.new(0, 8, 0, 0)
-    Card.BackgroundColor3 = Color3.fromRGB(252, 252, 252); Card.BorderSizePixel = 0; Card.ZIndex = 7; Card.Parent = parent
-    local CardCorner = Instance.new("UICorner"); CardCorner.CornerRadius = UDim.new(0, 10); CardCorner.Parent = Card
-    local CardStroke = Instance.new("UIStroke"); CardStroke.Color = Color3.fromRGB(230, 230, 230); CardStroke.Thickness = 1; CardStroke.Parent = Card
-    local IconFrame = Instance.new("Frame")
-    IconFrame.Size = UDim2.new(0, 26, 0, 26); IconFrame.Position = UDim2.new(0, 10, 0, 10)
-    IconFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240); IconFrame.BorderSizePixel = 0; IconFrame.ZIndex = 8; IconFrame.Parent = Card
-    local IconCorner = Instance.new("UICorner"); IconCorner.CornerRadius = UDim.new(0, 6); IconCorner.Parent = IconFrame
-    local IconText = Instance.new("TextLabel")
-    IconText.Size = UDim2.new(1, 0, 1, 0); IconText.Text = icon; IconText.TextSize = 11
-    IconText.BackgroundTransparency = 1; IconText.ZIndex = 9; IconText.Parent = IconFrame
-    local TitleText = Instance.new("TextLabel")
-    TitleText.Size = UDim2.new(0, 160, 0, 15); TitleText.Position = UDim2.new(0, 44, 0, 5)
-    TitleText.Text = name; TitleText.TextColor3 = Color3.fromRGB(50, 50, 50)
-    TitleText.Font = Enum.Font.GothamSemibold; TitleText.TextSize = 11
-    TitleText.BackgroundTransparency = 1; TitleText.TextXAlignment = Enum.TextXAlignment.Left; TitleText.ZIndex = 8; TitleText.Parent = Card
-    local DescText = Instance.new("TextLabel")
-    DescText.Size = UDim2.new(1, -140, 0, 13); DescText.Position = UDim2.new(0, 44, 0, 22)
-    DescText.Text = description .. " (默认" .. defaultValue .. ")"; DescText.TextColor3 = Color3.fromRGB(130, 130, 130)
-    DescText.Font = Enum.Font.Gotham; DescText.TextSize = 9; DescText.BackgroundTransparency = 1
-    DescText.TextXAlignment = Enum.TextXAlignment.Left; DescText.ZIndex = 8; DescText.Parent = Card
-    local InputBox = Instance.new("Frame")
-    InputBox.Size = UDim2.new(0, 55, 0, 20); InputBox.Position = UDim2.new(1, -128, 0, 13)
-    InputBox.BackgroundColor3 = Color3.fromRGB(235, 235, 235); InputBox.BorderSizePixel = 0; InputBox.ZIndex = 8; InputBox.Parent = Card
-    local InputCorner = Instance.new("UICorner"); InputCorner.CornerRadius = UDim.new(0, 5); InputCorner.Parent = InputBox
-    local InputField = Instance.new("TextBox")
-    InputField.Size = UDim2.new(1, -6, 1, 0); InputField.Position = UDim2.new(0, 3, 0, 0)
-    InputField.Text = defaultValue; InputField.TextColor3 = Color3.fromRGB(50, 50, 50)
-    InputField.Font = Enum.Font.Gotham; InputField.TextSize = 11; InputField.BackgroundTransparency = 1
-    InputField.PlaceholderText = defaultValue; InputField.PlaceholderColor3 = Color3.fromRGB(150, 150, 150); InputField.ZIndex = 9; InputField.Parent = InputBox
-    local ExecButton = Instance.new("TextButton")
-    ExecButton.Size = UDim2.new(0, 40, 0, 20); ExecButton.Position = UDim2.new(1, -46, 0, 13)
-    ExecButton.Text = "设置"; ExecButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ExecButton.Font = Enum.Font.GothamBold; ExecButton.TextSize = 10; ExecButton.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
-    ExecButton.BorderSizePixel = 0; ExecButton.ZIndex = 9; ExecButton.AutoButtonColor = false; ExecButton.Parent = Card
-    local ExecCorner = Instance.new("UICorner"); ExecCorner.CornerRadius = UDim.new(0, 5); ExecCorner.Parent = ExecButton
-    ExecButton.MouseEnter:Connect(function() ExecButton.BackgroundColor3 = Color3.fromRGB(255, 160, 20) end)
-    ExecButton.MouseLeave:Connect(function() ExecButton.BackgroundColor3 = Color3.fromRGB(255, 140, 0) end)
-    ExecButton.MouseButton1Click:Connect(function()
-        local value = tonumber(InputField.Text)
-        if value and onExecute then
-            local success = onExecute(value)
-            ExecButton.BackgroundColor3 = success and Color3.fromRGB(76, 175, 80) or Color3.fromRGB(244, 67, 54)
-        else
-            ExecButton.BackgroundColor3 = Color3.fromRGB(244, 67, 54)
-        end
-        wait(0.3)
-        ExecButton.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
-    end)
-    return Card
-end
-
-local function createMusicCard(parent, name, desc, icon, soundId)
-    local Card = Instance.new("Frame")
-    Card.Size = UDim2.new(1, -16, 0, 46); Card.Position = UDim2.new(0, 8, 0, 0)
-    Card.BackgroundColor3 = Color3.fromRGB(252, 252, 252); Card.BorderSizePixel = 0; Card.ZIndex = 7; Card.Parent = parent
-    local CardCorner = Instance.new("UICorner"); CardCorner.CornerRadius = UDim.new(0, 10); CardCorner.Parent = Card
-    local CardStroke = Instance.new("UIStroke"); CardStroke.Color = Color3.fromRGB(230, 230, 230); CardStroke.Thickness = 1; CardStroke.Parent = Card
-    local IconFrame = Instance.new("Frame")
-    IconFrame.Size = UDim2.new(0, 26, 0, 26); IconFrame.Position = UDim2.new(0, 10, 0, 10)
-    IconFrame.BackgroundColor3 = Color3.fromRGB(240, 240, 240); IconFrame.BorderSizePixel = 0; IconFrame.ZIndex = 8; IconFrame.Parent = Card
-    local IconCorner = Instance.new("UICorner"); IconCorner.CornerRadius = UDim.new(0, 6); IconCorner.Parent = IconFrame
-    local IconText = Instance.new("TextLabel")
-    IconText.Size = UDim2.new(1, 0, 1, 0); IconText.Text = icon; IconText.TextSize = 11
-    IconText.BackgroundTransparency = 1; IconText.ZIndex = 9; IconText.Parent = IconFrame
-    local TitleText = Instance.new("TextLabel")
-    TitleText.Size = UDim2.new(0, 180, 0, 15); TitleText.Position = UDim2.new(0, 44, 0, 5)
-    TitleText.Text = name; TitleText.TextColor3 = Color3.fromRGB(50, 50, 50)
-    TitleText.Font = Enum.Font.GothamSemibold; TitleText.TextSize = 11
-    TitleText.BackgroundTransparency = 1; TitleText.TextXAlignment = Enum.TextXAlignment.Left; TitleText.ZIndex = 8; TitleText.Parent = Card
-    local DescText = Instance.new("TextLabel")
-    DescText.Size = UDim2.new(1, -100, 0, 13); DescText.Position = UDim2.new(0, 44, 0, 22)
-    DescText.Text = desc; DescText.TextColor3 = Color3.fromRGB(130, 130, 130)
-    DescText.Font = Enum.Font.Gotham; DescText.TextSize = 9; DescText.BackgroundTransparency = 1
-    DescText.TextXAlignment = Enum.TextXAlignment.Left; DescText.ZIndex = 8; DescText.Parent = Card
-    local Btn = Instance.new("TextButton")
-    Btn.Size = UDim2.new(0, 50, 0, 20); Btn.Position = UDim2.new(1, -58, 0, 13)
-    Btn.Text = "播放"; Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Btn.Font = Enum.Font.GothamBold; Btn.TextSize = 10; Btn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
-    Btn.BorderSizePixel = 0; Btn.ZIndex = 9; Btn.AutoButtonColor = false; Btn.Parent = Card
-    local BtnCorner = Instance.new("UICorner"); BtnCorner.CornerRadius = UDim.new(0, 5); BtnCorner.Parent = Btn
-    local sound = nil
-    local isPlaying = false
-    Btn.MouseButton1Click:Connect(function()
-        if isPlaying then
-            if sound then sound:Stop(); sound:Destroy(); sound = nil end
-            isPlaying = false
-            Btn.Text = "播放"
-            Btn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
-        else
-            sound = Instance.new("Sound")
-            sound.SoundId = "rbxassetid://" .. soundId
-            sound.Volume = 1
-            sound.Parent = workspace
-            sound:Play()
-            sound.Ended:Connect(function()
-                sound:Destroy()
-                sound = nil
-                isPlaying = false
-                Btn.Text = "播放"
-                Btn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
-            end)
-            isPlaying = true
-            Btn.Text = "停止播放"
-            Btn.BackgroundColor3 = Color3.fromRGB(244, 67, 54)
-        end
-    end)
-    Btn.MouseEnter:Connect(function()
-        if not isPlaying then Btn.BackgroundColor3 = Color3.fromRGB(255, 160, 20) end
-    end)
-    Btn.MouseLeave:Connect(function()
-        if not isPlaying then Btn.BackgroundColor3 = Color3.fromRGB(255, 140, 0) end
-    end)
-end
-
-local announcementTextBox
-local function getTime()
-    local now = os.date("*t")
-    return now.year .. "年" .. now.month .. "月" .. now.day .. "日 " .. string.format("%02d", now.hour) .. ":" .. string.format("%02d", now.min) .. ":" .. string.format("%02d", now.sec)
-end
-local function updateTime()
-    if announcementTextBox then
-        announcementTextBox.Text = "⏰ " .. getTime() .. "\n\n👤 制作者：C Studio\n📅 创建日期：2026年7月10日\n🔄 此脚本一直更新\n\n📊 您目前已经执行了 " .. globalExecCount .. " 次，感谢您的支持！\n\n🎮 玩法：开启功能后在游戏中体验效果\n如果在游玩时遇到任何问题 请报告给我们❤️\n最大帮助者:CHANGCHENG66☕\n\n感谢 hacker_lololo888的支持❤️❤️❤️❤️❤️\n开学了更新会变慢👁️"
-    end
-end
-spawn(function() while true do updateTime(); wait(1) end end)
-local homePosition = nil
-spawn(function()
-    wait(3)
-    local c = Players.LocalPlayer.Character
-    if c and c:FindFirstChild("HumanoidRootPart") then
-        homePosition = c.HumanoidRootPart.CFrame
-    end
-end)
-
-local authorEspEnabled = true
-
-local function addAuthorESP(p)
-    if not authorEspEnabled then return end
-    if p.Name ~= "CHANGCHENG66" then return end
-    if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end) end
-    if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end) end
-    
-    local function s(c)
-        if not c then return end
-        local hl = Instance.new("Highlight")
-        hl.FillColor = Color3.fromRGB(255, 215, 0)
-        hl.FillTransparency = 0.3
-        hl.OutlineColor = Color3.fromRGB(255, 215, 0)
-        hl.OutlineTransparency = 0
-        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        hl.Adornee = c
-        hl.Parent = c
-        espHighlights[p] = hl
-        
-        local h = c:FindFirstChild("Head")
-        if h then
-            local bb = Instance.new("BillboardGui")
-            bb.Size = UDim2.new(0, 200, 0, 40)
-            bb.StudsOffset = Vector3.new(0, 3.5, 0)
-            bb.AlwaysOnTop = true
-            bb.Parent = h
-            local nl = Instance.new("TextLabel")
-            nl.Size = UDim2.new(1, 0, 1, 0)
-            nl.BackgroundTransparency = 1
-            nl.Text = "👑 " .. p.Name .. " · 此脚本作者"
-            nl.TextColor3 = Color3.fromRGB(255, 215, 0)
-            nl.Font = Enum.Font.GothamBold
-            nl.TextSize = 16
-            nl.TextStrokeTransparency = 0
-            nl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
-            nl.Parent = bb
-            espBillboards[p] = bb
-        end
-    end
-    
-    if p.Character then s(p.Character) end
-    p.CharacterAdded:Connect(function(c) if authorEspEnabled then s(c) end end)
-end
-
-local function refreshAuthorESP()
-    clearESP()
-    if authorEspEnabled then
-        for _, p in ipairs(Players:GetPlayers()) do addAuthorESP(p) end
-    end
-end
-
-function enableAuthorESP()
-    authorEspEnabled = true
-    refreshAuthorESP()
-end
-
-function disableAuthorESP()
-    authorEspEnabled = false
-    clearESP()
-end
-
-for _, p in ipairs(Players:GetPlayers()) do addAuthorESP(p) end
-Players.PlayerAdded:Connect(function(p) if authorEspEnabled then addAuthorESP(p) end end)
-Players.PlayerRemoving:Connect(function(p)
-    if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end); espHighlights[p] = nil end
-    if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end); espBillboards[p] = nil end
-end)
--- 第6段：pageContents 公告 + 通用 + 战斗 + 整活 + 音乐
+end-- 第6段：pageContents 公告 + 通用 + 战斗 + 整活 + 音乐
 
 local pageContents = {
     ["公告"] = {type = "text"},
@@ -1665,6 +1465,12 @@ pageContents["甩飞"] = {
 pageContents["服务器"] = {
     type = "buttons",
     items = {
+        {name = "找出谁打了一巴掌", desc = "点击执行", icon = "🤲", url = "https://raw.githubusercontent.com/hgvuyguyg/sbqr/main/巴掌"},
+        {name = "汉堡包", desc = "点击执行", icon = "🍔", url = "https://raw.githubusercontent.com/hgvuyguyg/sbqr/main/汉堡"},
+        {name = "机器人滑膛枪", desc = "点击执行", icon = "🤖", url = "https://raw.githubusercontent.com/hgvuyguyg/sbqr/main/机器人"},
+        {name = "住宅大逃杀", desc = "点击执行", icon = "🚪", url = "https://raw.githubusercontent.com/hgvuyguyg/sbqr/main/住宅屠杀"},
+        {name = "降落或死亡", desc = "点击执行", icon = "🛩️", url = "https://raw.githubusercontent.com/hgvuyguyg/sbqr/main/死亡"},
+        {name = "砧板鲶鱼", desc = "点击执行", icon = "🐟", url = "https://raw.githubusercontent.com/hgvuyguyg/sbqr/main/钓鱼"},
         {name = "死铁轨(黑脚本)", desc = "点击执行", icon = "🚂", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/铁轨"},
         {name = "柠檬大亨", desc = "点击执行", icon = "🍋", url = "https://rawscripts.net/raw/Sell-Lemons-Fluid-Orchard-Update-Read-Description-241132"},
         {name = "键盘逃脱", desc = "点击执行", icon = "⌨️", url = "https://raw.githubusercontent.com/ccdushii/zzzzzzzzz/refs/heads/main/ssssssssss"},
@@ -1767,7 +1573,7 @@ pageContents["服务器"] = {
         {name = "空乘模拟器", desc = "点击执行", icon = "🛫", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/空乘模拟机"},
         {name = "埃尔帕索边境角色扮演", desc = "点击执行", icon = "🤑", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/帕索角色扮演"},
         {name = "加一玩具长臂逃脱", desc = "点击执行", icon = "🤳", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/玩具长臂"},
-        {name = "墨水(别催了)", desc = "点击执行", icon = "😢", url = "https://raw.githubusercontent.com/wefwef34/inkgames.github.io/refs/heads/main/ringta.lua"},
+        {name = "墨水(别催了)", desc = "点击执行", icon = "😢", url = "https://raw.githubusercontent.com/hgvuyguyg/inkgames.github.io/refs/heads/main/ringta.lua"},
         {name = "无尽旅馆", desc = "点击执行", icon = "😎", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/k"},
         {name = "力量传奇", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/力量"},
     }
@@ -2397,8 +2203,11 @@ end
 -- 第10段：隐藏面板按钮 + 删除脚本按钮
 
 HideButton.MouseButton1Click:Connect(function()
-    isOpen = false
-    MainFrame.Visible = false
+    if isOpen then
+        closePanel()
+    else
+        openPanel()
+    end
 end)
 
 CloseButton.MouseButton1Click:Connect(function()
@@ -2502,6 +2311,7 @@ end)
 contentPages["公告"].Visible = true
 
 function openPanel()
+    if isOpen then return end
     isOpen = true
     MainFrame.Visible = true
     MainFrame.Size = UDim2.new(0, 0, 0, 0)
@@ -2515,6 +2325,7 @@ function openPanel()
 end
 
 function closePanel()
+    if not isOpen then return end
     isOpen = false
     TweenService:Create(MainFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0), Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
     wait(0.15)
