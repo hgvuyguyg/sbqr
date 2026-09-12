@@ -389,18 +389,15 @@ InnerCorner.Parent = InnerPanel
 
 local panelMode = "平板"
 
--- ============ 等比缩放核心 ============
 local function applyPanelSize()
     if panelMode == "平板" then
         MainFrame.Size = UDim2.new(0, 580, 0, 440)
         MainFrame.Position = UDim2.new(0.5, -290, 0.5, -220)
         RGBOutline.Size = UDim2.new(1, 5, 1, 5)
-        InnerPanel.UIScale.Scale = 1
     else
         MainFrame.Size = UDim2.new(0, 500, 0, 340)
         MainFrame.Position = UDim2.new(0.5, -250, 0.5, -170)
         RGBOutline.Size = UDim2.new(1, 3, 1, 3)
-        InnerPanel.UIScale.Scale = 0.85
     end
     if isRainbowBorder then
     else
@@ -409,11 +406,6 @@ local function applyPanelSize()
         RGBOutline.BackgroundColor3 = c
     end
 end
-
--- 给 InnerPanel 加 UIScale 实现等比缩放
-local innerScale = Instance.new("UIScale")
-innerScale.Scale = 1
-innerScale.Parent = InnerPanel
 
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1, 0, 0, 36)
@@ -426,20 +418,21 @@ TopBarCorner.CornerRadius = UDim.new(0, 12)
 TopBarCorner.Parent = TopBar
 
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(0, 120, 1, 0)
-TitleLabel.Position = UDim2.new(0, 12, 0, 0)
+TitleLabel.Size = UDim2.new(0, 100, 1, 0)
+TitleLabel.Position = UDim2.new(0, 10, 0, 0)
 TitleLabel.Text = "黑脚本·管理员版"
 TitleLabel.TextColor3 = Color3.fromRGB(50, 50, 50)
 TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextSize = 15
+TitleLabel.TextSize = 14
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.ZIndex = 11
 TitleLabel.Parent = TopBar
 
+-- 绿色信息框（缩小靠左）
 local InfoBox = Instance.new("Frame")
-InfoBox.Size = UDim2.new(0, 220, 0, 30)
-InfoBox.Position = UDim2.new(0, 135, 0, 3)
+InfoBox.Size = UDim2.new(0, 190, 0, 26)
+InfoBox.Position = UDim2.new(0, 115, 0, 5)
 InfoBox.BackgroundColor3 = Color3.fromRGB(76, 175, 80)
 InfoBox.BorderSizePixel = 0
 InfoBox.ZIndex = 12
@@ -466,7 +459,7 @@ InfoLabel.Size = UDim2.new(1, 0, 1, 0)
 InfoLabel.Text = "黑脚本 V2.0"
 InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 InfoLabel.Font = Enum.Font.GothamBold
-InfoLabel.TextSize = 10
+InfoLabel.TextSize = 9
 InfoLabel.BackgroundTransparency = 1
 InfoLabel.ZIndex = 13
 InfoLabel.Parent = InfoBox
@@ -478,9 +471,10 @@ spawn(function()
     end
 end)
 
+-- 管理员版本（缩小靠左）
 local AdminBadge = Instance.new("Frame")
-AdminBadge.Size = UDim2.new(0, 85, 0, 30)
-AdminBadge.Position = UDim2.new(0, 359, 0, 3)
+AdminBadge.Size = UDim2.new(0, 75, 0, 26)
+AdminBadge.Position = UDim2.new(0, 310, 0, 5)
 AdminBadge.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
 AdminBadge.BorderSizePixel = 0
 AdminBadge.ZIndex = 12
@@ -504,10 +498,10 @@ RunService.RenderStepped:Connect(function(delta)
 end)
 local AdminText = Instance.new("TextLabel")
 AdminText.Size = UDim2.new(1, 0, 1, 0)
-AdminText.Text = "👑 管理员版本"
+AdminText.Text = "👑 管理员"
 AdminText.TextColor3 = Color3.fromRGB(0, 0, 0)
 AdminText.Font = Enum.Font.GothamBold
-AdminText.TextSize = 11
+AdminText.TextSize = 10
 AdminText.BackgroundTransparency = 1
 AdminText.ZIndex = 13
 AdminText.Parent = AdminBadge
@@ -530,7 +524,7 @@ CloseCorner.Parent = CloseButton
 CloseButton.MouseEnter:Connect(function() CloseButton.BackgroundColor3 = Color3.fromRGB(200, 200, 200) end)
 CloseButton.MouseLeave:Connect(function() CloseButton.BackgroundColor3 = Color3.fromRGB(230, 230, 230) end)
 
--- 隐藏 UI 按钮（−）
+-- 隐藏面板按钮（−）
 local HideButton = Instance.new("TextButton")
 HideButton.Size = UDim2.new(0, 28, 0, 28)
 HideButton.Position = UDim2.new(1, -68, 0, 4)
@@ -633,7 +627,7 @@ NavScroll.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 NavScroll.BackgroundTransparency = 0.03
 NavScroll.BorderSizePixel = 0
 NavScroll.ScrollBarThickness = 2
-NavScroll.ScrollBarImageColor3 = Color3.fromRGB(200, 200, 200)
+NavScroll.ScrollBarImageColor3 = Color3.fromRGB(180, 180, 180)
 NavScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 NavScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 NavScroll.ZIndex = 6
@@ -2419,15 +2413,11 @@ end
 for _, item in ipairs(settingsItems) do
     createSettingsCard(settingsPage, item)
 end
--- 主脚本 第8段-B：隐藏UI + 删除脚本 + 打开/关闭动画
+-- 主脚本 第8段-B：隐藏面板 + 删除脚本 + 打开/关闭动画
 
--- ============ 隐藏 UI 按钮（−） ============
+-- ============ 隐藏面板按钮（−） ============
 HideButton.MouseButton1Click:Connect(function()
-    if isOpen then
-        closePanel()
-    else
-        openPanel()
-    end
+    if isOpen then closePanel() else openPanel() end
 end)
 
 -- ============ 删除脚本按钮（×） ============
