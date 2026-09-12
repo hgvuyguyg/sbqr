@@ -368,6 +368,7 @@ InnerCorner.Parent = InnerPanel
 local panelMode = "平板"
 local isOpen = false
 local contentPages = {}
+local navButtons = {}
 
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1, 0, 0, 36)
@@ -598,7 +599,6 @@ NavTopPad.Size = UDim2.new(1, 0, 0, 5)
 NavTopPad.BackgroundTransparency = 1
 NavTopPad.Parent = NavScroll
 local navItems = {{name = "公告", icon = "📢"},{name = "通用", icon = "⚙️"},{name = "战斗功能", icon = "⚔️"},{name = "整活功能", icon = "🎭"},{name = "音乐区", icon = "🎵"},{name = "甩飞", icon = "💨"},{name = "服务器", icon = "📡"},{name = "国内脚本", icon = "🇨🇳"},{name = "设置", icon = "⚙️"}}
-local navButtons = {}
 local selectedNav = nil
 local ContentArea = Instance.new("Frame")
 ContentArea.Size = UDim2.new(1, -136, 1, 0)
@@ -636,7 +636,54 @@ for _, item in ipairs(navItems) do
     table.insert(navButtons, {button = NavButton, name = item.name})
 end
 
--- ============ 提前定义面板开关函数 ============
+-- ============ 面板缩放函数 ============
+local function applyPanelSize()
+    if panelMode == "平板" then
+        MainFrame.Size = UDim2.new(0, 580, 0, 440)
+        MainFrame.Position = UDim2.new(0.5, -290, 0.5, -220)
+        RGBOutline.Size = UDim2.new(1, 5, 1, 5)
+        TitleLabel.Size = UDim2.new(0, 120, 1, 0)
+        TitleLabel.Position = UDim2.new(0, 12, 0, 0)
+        TitleLabel.TextSize = 15
+        InfoBox.Size = UDim2.new(0, 220, 0, 30)
+        InfoBox.Position = UDim2.new(0, 135, 0, 3)
+        InfoLabel.TextSize = 10
+        AdminBadge.Size = UDim2.new(0, 85, 0, 30)
+        AdminBadge.Position = UDim2.new(0, 359, 0, 3)
+        AdminText.Text = "👑 管理员版本"
+        AdminText.TextSize = 11
+        TopBar.Size = UDim2.new(1, 0, 0, 36)
+        TopDivider.Position = UDim2.new(0, 12, 0, 36)
+        MainContentContainer.Position = UDim2.new(0, 0, 0, 36)
+        MainContentContainer.Size = UDim2.new(1, 0, 1, -36)
+    else
+        MainFrame.Size = UDim2.new(0, 500, 0, 340)
+        MainFrame.Position = UDim2.new(0.5, -250, 0.5, -170)
+        RGBOutline.Size = UDim2.new(1, 3, 1, 3)
+        TitleLabel.Size = UDim2.new(0, 100, 1, 0)
+        TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+        TitleLabel.TextSize = 13
+        InfoBox.Size = UDim2.new(0, 180, 0, 24)
+        InfoBox.Position = UDim2.new(0, 100, 0, 4)
+        InfoLabel.TextSize = 8
+        AdminBadge.Size = UDim2.new(0, 68, 0, 24)
+        AdminBadge.Position = UDim2.new(0, 290, 0, 4)
+        AdminText.Text = "👑 管理员"
+        AdminText.TextSize = 9
+        TopBar.Size = UDim2.new(1, 0, 0, 32)
+        TopDivider.Position = UDim2.new(0, 12, 0, 32)
+        MainContentContainer.Position = UDim2.new(0, 0, 0, 32)
+        MainContentContainer.Size = UDim2.new(1, 0, 1, -32)
+    end
+    if isRainbowBorder then
+    else
+        local c = borderColors[currentBorderColor] or Color3.fromRGB(255, 215, 0)
+        RGBBorder.BackgroundColor3 = c
+        RGBOutline.BackgroundColor3 = c
+    end
+end
+
+-- ============ 打开/关闭函数（提前定义） ============
 function openPanel()
     if isOpen then return end
     isOpen = true
@@ -660,6 +707,10 @@ function closePanel()
 end
 
 OpenBtn.MouseButton1Click:Connect(function()
+    if isOpen then closePanel() else openPanel() end
+end)
+
+HideButton.MouseButton1Click:Connect(function()
     if isOpen then closePanel() else openPanel() end
 end)
 -- 第2段：createButtonCard
@@ -1453,7 +1504,7 @@ local function getTime()
 end
 local function updateTime()
     if announcementTextBox then
-        announcementTextBox.Text = "⏰ " .. getTime() .. "\n\n👤 制作者：C Studio\n📅 创建日期：2026年7月10日\n🔄 此脚本一直更新\n\n📊 您目前已经执行了 " .. globalExecCount .. " 次，感谢您的支持！\n\n🎮 玩法：开启功能后在游戏中体验效果\n如果在游玩时遇到任何问题 请报告给我们❤️\n最大帮助者:CHANGCHENG66☕\n\n感谢 hacker_lololo888的支持❤️❤️❤️❤️❤️\n开学了更新会变慢👁️\n当你看到这行字，说明脚本还在更新"
+        announcementTextBox.Text = "⏰ " .. getTime() .. "\n\n👤 制作者：C Studio\n📅 创建日期：2026年7月10日\n🔄 此脚本一直更新\n\n📊 您目前已经执行了 " .. globalExecCount .. " 次，感谢您的支持！\n\n🎮 玩法：开启功能后在游戏中体验效果\n如果在游玩时遇到任何问题 请报告给我们❤️\n最大帮助者:CHANGCHENG66☕\n\n感谢 hacker_lololo888的支持❤️❤️❤️❤️❤️\n开学了更新会变慢👁️"
     end
 end
 spawn(function() while true do updateTime(); wait(1) end end)
@@ -1534,7 +1585,113 @@ Players.PlayerRemoving:Connect(function(p)
     if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end); espHighlights[p] = nil end
     if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end); espBillboards[p] = nil end
 end)
+-- 第6段：pageContents 公告 + 通用 + 战斗 + 整活 + 音乐
 
+local pageContents = {
+    ["公告"] = {type = "text"},
+    ["通用"] = {
+        type = "toggles",
+        items = {
+            {type = "button", name = "飞行模式", desc = "远程加载飞行脚本", icon = "🕊️", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/refs/heads/main/%E9%A3%9E%E9%A5%BC"},
+            {type = "button", name = "碰撞甩飞", desc = "帅飞plud", icon = "😎", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/帅飞"},
+            {type = "button", name = "fps通用", desc = "自动瞄准脚本", icon = "🎯", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/%E8%87%AA%E7%9E%84"},
+            {type = "button", name = "传送玩家", desc = "选择玩家传送到旁边", icon = "📬", url = "teleport"},
+            {type = "button", name = "跟随玩家", desc = "按跳跃键取消跟随", icon = "🚶", url = "follow"},
+            {type = "button", name = "NTv3.3", desc = "多功能工具", icon = "🥚", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/nt"},
+            {type = "button", name = "无限罗宝", desc = "亲测可用", icon = "🌷", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/锁机"},
+            {type = "button", name = "Tx翻译", desc = "点击执行", icon = "⛽", url = "https://raw.githubusercontent.com/JsYb666/Item/refs/heads/main/Auto-language"},
+            {type = "button", name = "快速回家", desc = "传送到执行脚本时的位置", icon = "🏠", url = "home"},
+            {type = "toggle", name = "无敌模式", desc = "免疫伤害（客户端）", icon = "🛡️", code = "god"},
+            {type = "toggle", name = "千倍速度", desc = "移动速度1000", icon = "⚡", code = "superspeed"},
+            {type = "toggle", name = "无限体力", desc = "体力不会减少", icon = "💪", code = "infstamina"},
+            {type = "toggle", name = "无限弹药", desc = "弹药永远999", icon = "🔫", code = "infammo"},
+            {type = "toggle", name = "服务器信息", desc = "人数+坐标+附近玩家", icon = "📊", code = "serverinfo"},
+            {type = "toggle", name = "自动收集", desc = "自动吸附近物品", icon = "📦", code = "collect"},
+            {type = "toggle", name = "点击传送", desc = "鼠标点哪里传哪里", icon = "📍", code = "clicktp"},
+            {type = "toggle", name = "自动连点", desc = "自动点击屏幕准心", icon = "🖱️", code = "autoclick"},
+            {type = "toggle", name = "踏空", desc = "走到哪定到哪不往下掉", icon = "🦶", code = "float"},
+            {type = "toggle", name = "防挂机", desc = "自动防止被踢出游戏", icon = "⏰", code = "antiafk"},
+            {type = "toggle", name = "加速模式", desc = "游戏全局加速", icon = "⏩", code = "speedhack"},
+            {type = "toggle", name = "穿墙模式", desc = "可以穿过墙壁", icon = "👻", code = "noclip"},
+            {type = "toggle", name = "透视物品", desc = "高亮可拾取物品", icon = "✨", code = "itemesp"},
+            {type = "toggle", name = "隐身模式", desc = "别人看不到你", icon = "👻", code = "invisible"},
+            {type = "toggle", name = "删除建模", desc = "点击方块确认后删除", icon = "🗑️", code = "deletepart"},
+            {type = "toggle", name = "去雾功能", desc = "消除游戏中的雾气", icon = "🌫️", code = "clearfog"},
+            {type = "input", name = "旋转速度", desc = "角色自动旋转", icon = "🔄", default = "0", execute = function(v)
+                if spinConnection then spinConnection:Disconnect(); spinConnection = nil end
+                if v > 0 then
+                    local c = Players.LocalPlayer.Character
+                    if c and c:FindFirstChild("HumanoidRootPart") then
+                        local hrp = c.HumanoidRootPart
+                        spinConnection = RunService.RenderStepped:Connect(function()
+                            if hrp and hrp.Parent then hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(v) / 60, 0) end
+                        end)
+                    end
+                end
+                return true
+            end},
+            {type = "input", name = "广角", desc = "摄像机视野", icon = "🔭", default = "70", execute = function(v) if v > 0 and v <= 120 then local cam = workspace.CurrentCamera; if cam then cam.FieldOfView = v; return true end end; return false end},
+            {type = "input", name = "调速度", desc = "移动速度", icon = "⚡", default = "16", execute = function(v) if v > 0 then local c = Players.LocalPlayer.Character; if c and c:FindFirstChild("Humanoid") then c.Humanoid.WalkSpeed = v; return true end end; return false end},
+            {type = "input", name = "跳跃高度", desc = "跳跃高度", icon = "🦘", default = "50", execute = function(v) if v > 0 then local c = Players.LocalPlayer.Character; if c and c:FindFirstChild("Humanoid") then c.Humanoid.JumpHeight = v; return true end end; return false end},
+            {type = "input", name = "重力", desc = "世界重力", icon = "🌙", default = "196", execute = function(v) if v > 0 then workspace.Gravity = v; return true end; return false end},
+            {type = "toggle", name = "无限跳跃", desc = "无限连续跳跃", icon = "⬆️", code = "infjump"},
+            {type = "toggle", name = "夜视功能", desc = "提高黑暗视野亮度", icon = "🔦", code = "night"},
+            {type = "toggle", name = "显示FPS", desc = "左上角帧率显示", icon = "📊", code = "fps"},
+            {type = "toggle", name = "ESP透视", desc = "红色描边+名字可穿墙", icon = "👁️", code = "esp"},
+        }
+    },
+    ["战斗功能"] = {
+        type = "toggles",
+        items = {
+            {type = "toggle", name = "团队高亮", desc = "队友蓝色高亮", icon = "🔵", code = "teamglow"},
+            {type = "toggle", name = "敌对高亮", desc = "敌人红色高亮", icon = "🔴", code = "enemyglow"},
+            {type = "toggle", name = "自动攻击", desc = "自动追踪攻击敌人", icon = "⚔️", code = "autoattack"},
+            {type = "toggle", name = "全图点亮", desc = "消除所有阴影", icon = "💡", code = "fulllight"},
+            {type = "toggle", name = "一键自杀", desc = "立即重置角色", icon = "💀", code = "suicide"},
+        }
+    },
+    ["整活功能"] = {
+        type = "toggles",
+        items = {
+            {type = "toggle", name = "跳舞-机械舞", desc = "机器人风格舞蹈", icon = "🤖", code = "dance1"},
+            {type = "toggle", name = "喷火模式", desc = "从角色身上喷火", icon = "🔥", code = "fire"},
+            {type = "toggle", name = "光环模式", desc = "角色发光环", icon = "✨", code = "glow"},
+            {type = "toggle", name = "倒立行走", desc = "角色倒过来", icon = "🙃", code = "upsidedown"},
+            {type = "toggle", name = "大头模式", desc = "头变得超大", icon = "🗿", code = "bighead"},
+            {type = "toggle", name = "全屏特效", desc = "屏幕加滤镜", icon = "🎨", code = "screenfx"},
+            {type = "toggle", name = "彩虹拖尾", desc = "移动时拖彩虹尾迹", icon = "🌈", code = "trail"},
+            {type = "toggle", name = "火焰拖尾", desc = "移动时拖火焰尾迹", icon = "🔥", code = "firetrail"},
+            {type = "toggle", name = "冰霜拖尾", desc = "移动时拖冰霜尾迹", icon = "❄️", code = "iceTrail"},
+            {type = "toggle", name = "管理员专属-彩虹名字", desc = "头顶名字变彩虹色（管理员特权）", icon = "👑", code = "rainbowname"},
+            {type = "toggle", name = "巨大化", desc = "把自己变大3倍", icon = "🦖", code = "giant"},
+            {type = "toggle", name = "客户端字幕", desc = "屏幕上方显示入侵信息", icon = "📺", code = "subtitle"},
+            {type = "button", name = "祖国人", desc = "祖国人脚本", icon = "🦸", url = "https://raw.githubusercontent.com/giobolqv1/homelander-by-GioBolqv1-/refs/heads/main/homelander.lua"},
+            {type = "button", name = "动作动画包", desc = "很多动作", icon = "🤖", url = "https://rawscripts.net/raw/Universal-Script-7yd7-I-Emote-Script-48024"},
+            {type = "button", name = "播放器", desc = "自定义", icon = "🎉", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/播放"},
+        }
+    },
+    ["音乐区"] = {
+        type = "music",
+        items = {
+            {name = "进击的巨人", desc = "点击播放", icon = "🎵", soundId = "89711807693889"},
+            {name = "误闯天家", desc = "点击播放", icon = "🎶", soundId = "124384558101360"},
+            {name = "DJ喂喂喂", desc = "点击播放", icon = "🎧", soundId = "90054735589094"},
+            {name = "unhappy", desc = "点击播放", icon = "🔊", soundId = "88523902860927"},
+            {name = "震撼小曲二", desc = "点击播放", icon = "🎼", soundId = "137717310854691"},
+            {name = "曾经的王", desc = "点击播放", icon = "🕺", soundId = "121931252233493"},
+            {name = "离开我的依赖", desc = "点击播放", icon = "🌻", soundId = "112834898401032"},
+            {name = "雨爱", desc = "点击播放", icon = "🌸", soundId = "79277371759525"},
+            {name = "iqoo", desc = "点击播放", icon = "🎁", soundId = "75047041148646"},
+            {name = "玉米饼", desc = "点击播放", icon = "🌽", soundId = "142376088"},
+            {name = "我太想进步了", desc = "点击播放", icon = "🍺", soundId = "126846792948717"},
+            {name = "最初的记忆", desc = "点击播放", icon = "💜", soundId = "108869978075942"},
+            {name = "海与你", desc = "完整版", icon = "🥶", soundId = "76421239273915"},
+            {name = "失眠", desc = "完整版", icon = "😴", soundId = "138048397060431"},
+            {name = "传说之下", desc = "完整版", icon = "🍁", soundId = "138048397060431"},
+            {name = "祖国人进行曲", desc = "点击播放", icon = "🎃", soundId = "86555185586884"},
+        }
+    },
+}
 -- 第7段：pageContents 甩飞 + 服务器 + 国内脚本
 
 pageContents["甩飞"] = {
@@ -2269,15 +2426,7 @@ end
 for _, item in ipairs(settingsItems) do
     createSettingsCard(settingsPage, item)
 end
--- 第10段：隐藏面板 + 删除脚本 + 初始化
-
-HideButton.MouseButton1Click:Connect(function()
-    if isOpen then
-        closePanel()
-    else
-        openPanel()
-    end
-end)
+-- 第10段：删除脚本按钮 + 初始化
 
 CloseButton.MouseButton1Click:Connect(function()
     local confirmGui = Instance.new("ScreenGui")
