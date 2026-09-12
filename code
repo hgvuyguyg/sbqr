@@ -207,7 +207,7 @@ Divider.Parent = Bar
 local OpenBtn = Instance.new("TextButton")
 OpenBtn.Size = UDim2.new(1, -64, 1, -6)
 OpenBtn.Position = UDim2.new(0, 62, 0, 3)
-OpenBtn.Text = "打开黑脚本s"
+OpenBtn.Text = "打开黑脚本"
 OpenBtn.TextColor3 = Color3.fromRGB(40, 40, 40)
 OpenBtn.Font = Enum.Font.GothamBold
 OpenBtn.TextSize = 14
@@ -368,52 +368,6 @@ InnerCorner.Parent = InnerPanel
 local panelMode = "平板"
 local isOpen = false
 local contentPages = {}
-
-local function applyPanelSize()
-    if panelMode == "平板" then
-        MainFrame.Size = UDim2.new(0, 580, 0, 440)
-        MainFrame.Position = UDim2.new(0.5, -290, 0.5, -220)
-        RGBOutline.Size = UDim2.new(1, 5, 1, 5)
-        TitleLabel.Size = UDim2.new(0, 120, 1, 0)
-        TitleLabel.Position = UDim2.new(0, 12, 0, 0)
-        TitleLabel.TextSize = 15
-        InfoBox.Size = UDim2.new(0, 220, 0, 30)
-        InfoBox.Position = UDim2.new(0, 135, 0, 3)
-        InfoLabel.TextSize = 10
-        AdminBadge.Size = UDim2.new(0, 85, 0, 30)
-        AdminBadge.Position = UDim2.new(0, 359, 0, 3)
-        AdminText.Text = "👑 管理员版本"
-        AdminText.TextSize = 11
-        TopBar.Size = UDim2.new(1, 0, 0, 36)
-        TopDivider.Position = UDim2.new(0, 12, 0, 36)
-        MainContentContainer.Position = UDim2.new(0, 0, 0, 36)
-        MainContentContainer.Size = UDim2.new(1, 0, 1, -36)
-    else
-        MainFrame.Size = UDim2.new(0, 500, 0, 340)
-        MainFrame.Position = UDim2.new(0.5, -250, 0.5, -170)
-        RGBOutline.Size = UDim2.new(1, 3, 1, 3)
-        TitleLabel.Size = UDim2.new(0, 100, 1, 0)
-        TitleLabel.Position = UDim2.new(0, 10, 0, 0)
-        TitleLabel.TextSize = 13
-        InfoBox.Size = UDim2.new(0, 180, 0, 24)
-        InfoBox.Position = UDim2.new(0, 100, 0, 4)
-        InfoLabel.TextSize = 8
-        AdminBadge.Size = UDim2.new(0, 68, 0, 24)
-        AdminBadge.Position = UDim2.new(0, 290, 0, 4)
-        AdminText.Text = "👑 管理员"
-        AdminText.TextSize = 9
-        TopBar.Size = UDim2.new(1, 0, 0, 32)
-        TopDivider.Position = UDim2.new(0, 12, 0, 32)
-        MainContentContainer.Position = UDim2.new(0, 0, 0, 32)
-        MainContentContainer.Size = UDim2.new(1, 0, 1, -32)
-    end
-    if isRainbowBorder then
-    else
-        local c = borderColors[currentBorderColor] or Color3.fromRGB(255, 215, 0)
-        RGBBorder.BackgroundColor3 = c
-        RGBOutline.BackgroundColor3 = c
-    end
-end
 
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1, 0, 0, 36)
@@ -725,9 +679,6 @@ local function createButtonCard(parent, name, desc, icon, url)
             local tb = Instance.new("Frame")
             tb.Size = UDim2.new(1, 0, 0, 30); tb.BackgroundColor3 = Color3.fromRGB(50, 50, 50); tb.BorderSizePixel = 0; tb.ZIndex = 51; tb.Parent = tpFrame
             local tbCorner = Instance.new("UICorner"); tbCorner.CornerRadius = UDim.new(0, 10); tbCorner.Parent = tb
-            local tbFix = Instance.new("Frame")
-            tbFix.Size = UDim2.new(1, 0, 0.5, 0); tbFix.Position = UDim2.new(0, 0, 1, 0)
-            tbFix.BackgroundColor3 = Color3.fromRGB(50, 50, 50); tbFix.BorderSizePixel = 0; tbFix.ZIndex = 51; tbFix.Parent = tb
             local ttl = Instance.new("TextLabel")
             ttl.Size = UDim2.new(1, -28, 1, 0); ttl.Position = UDim2.new(0, 10, 0, 0)
             ttl.Text = url == "follow" and "选择跟随" or "选择玩家"; ttl.TextColor3 = Color3.fromRGB(255, 255, 255); ttl.Font = Enum.Font.GothamBold
@@ -1349,7 +1300,7 @@ elseif runCode == "teamglow" then
         end
     end)
 end
--- 第5段
+-- 第5段：createInputCard + createMusicCard + 公告 + homePosition + 作者ESP
 
 local function createInputCard(parent, name, description, icon, defaultValue, onExecute)
     local Card = Instance.new("Frame")
@@ -1928,8 +1879,7 @@ for pageName, contentData in pairs(pageContents) do
                 return
             end
 
-            local totalHeight = #results * 48 + 10
-            searchResultContainer.Size = UDim2.new(1, -16, 0, math.min(totalHeight, 300))
+            searchResultContainer.Size = UDim2.new(1, -16, 0, math.min(#results * 48 + 10, 300))
 
             for _, item in ipairs(results) do
                 local resultCard = Instance.new("Frame")
@@ -1998,17 +1948,12 @@ for pageName, contentData in pairs(pageContents) do
                         goBtn.BackgroundColor3 = Color3.fromRGB(76, 175, 80)
                         if item.data.url == "teleport" or item.data.url == "follow" then
                             for _, nav in ipairs(navButtons) do
-                                if nav.name == item.page then
-                                    selectNav(nav.button, item.page)
-                                    break
-                                end
+                                if nav.name == item.page then selectNav(nav.button, item.page) break end
                             end
                         elseif item.data.url == "home" then
                             if homePosition then
                                 local c = Players.LocalPlayer.Character
-                                if c and c:FindFirstChild("HumanoidRootPart") then
-                                    c.HumanoidRootPart.CFrame = homePosition
-                                end
+                                if c and c:FindFirstChild("HumanoidRootPart") then c.HumanoidRootPart.CFrame = homePosition end
                             end
                         else
                             task.spawn(function() pcall(function() loadstring(game:HttpGet(item.data.url))() end) end)
@@ -2059,10 +2004,7 @@ for pageName, contentData in pairs(pageContents) do
                                 Lighting.FogEnd = 100000; Lighting.FogStart = 50000
                             else
                                 for _, nav in ipairs(navButtons) do
-                                    if nav.name == item.page then
-                                        selectNav(nav.button, item.page)
-                                        break
-                                    end
+                                    if nav.name == item.page then selectNav(nav.button, item.page) break end
                                 end
                             end
                         end
@@ -2174,12 +2116,10 @@ for pageName, contentData in pairs(pageContents) do
         end)
 
     elseif contentData.type == "toggles" then
-        local n = 0
         for _, item in ipairs(contentData.items) do
             if item.type == "button" then createButtonCard(Page, item.name, item.desc, item.icon, item.url)
             elseif item.type == "toggle" then createFeatureToggle(Page, item.name, item.desc, item.icon, item.code)
             elseif item.type == "input" then createInputCard(Page, item.name, item.desc, item.icon, item.default, item.execute) end
-            n = n + 1
         end
     elseif contentData.type == "buttons" then
         for _, item in ipairs(contentData.items) do
@@ -2408,7 +2348,7 @@ end
 for _, item in ipairs(settingsItems) do
     createSettingsCard(settingsPage, item)
 end
--- 第10段：隐藏面板按钮 + 删除脚本按钮
+-- 第10段：隐藏面板 + 删除脚本 + 动画 + 初始化
 
 HideButton.MouseButton1Click:Connect(function()
     if isOpen then
@@ -2514,7 +2454,6 @@ CloseButton.MouseButton1Click:Connect(function()
         end)
     end)
 end)
--- 第11段：打开/关闭动画
 
 contentPages["公告"].Visible = true
 
@@ -2543,7 +2482,6 @@ end
 OpenBtn.MouseButton1Click:Connect(function()
     if isOpen then closePanel() else openPanel() end
 end)
--- 第12段：初始化导航 + 结尾
 
 selectNav(navButtons[1].button, "公告")
 
