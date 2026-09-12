@@ -374,10 +374,30 @@ local function applyPanelSize()
         MainFrame.Size = UDim2.new(0, 580, 0, 440)
         MainFrame.Position = UDim2.new(0.5, -290, 0.5, -220)
         RGBOutline.Size = UDim2.new(1, 5, 1, 5)
+        TitleLabel.Size = UDim2.new(0, 120, 1, 0)
+        TitleLabel.Position = UDim2.new(0, 12, 0, 0)
+        TitleLabel.TextSize = 15
+        InfoBox.Size = UDim2.new(0, 220, 0, 30)
+        InfoBox.Position = UDim2.new(0, 135, 0, 3)
+        InfoLabel.TextSize = 10
+        AdminBadge.Size = UDim2.new(0, 85, 0, 30)
+        AdminBadge.Position = UDim2.new(0, 359, 0, 3)
+        AdminText.Text = "👑 管理员版本"
+        AdminText.TextSize = 11
     else
         MainFrame.Size = UDim2.new(0, 500, 0, 340)
         MainFrame.Position = UDim2.new(0.5, -250, 0.5, -170)
         RGBOutline.Size = UDim2.new(1, 3, 1, 3)
+        TitleLabel.Size = UDim2.new(0, 100, 1, 0)
+        TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+        TitleLabel.TextSize = 14
+        InfoBox.Size = UDim2.new(0, 190, 0, 26)
+        InfoBox.Position = UDim2.new(0, 115, 0, 5)
+        InfoLabel.TextSize = 9
+        AdminBadge.Size = UDim2.new(0, 75, 0, 26)
+        AdminBadge.Position = UDim2.new(0, 310, 0, 5)
+        AdminText.Text = "👑 管理员"
+        AdminText.TextSize = 10
     end
     if isRainbowBorder then
     else
@@ -398,20 +418,20 @@ TopBarCorner.CornerRadius = UDim.new(0, 12)
 TopBarCorner.Parent = TopBar
 
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(0, 100, 1, 0)
-TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+TitleLabel.Size = UDim2.new(0, 120, 1, 0)
+TitleLabel.Position = UDim2.new(0, 12, 0, 0)
 TitleLabel.Text = "黑脚本·管理员版"
 TitleLabel.TextColor3 = Color3.fromRGB(50, 50, 50)
 TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextSize = 14
+TitleLabel.TextSize = 15
 TitleLabel.BackgroundTransparency = 1
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.ZIndex = 11
 TitleLabel.Parent = TopBar
 
 local InfoBox = Instance.new("Frame")
-InfoBox.Size = UDim2.new(0, 190, 0, 26)
-InfoBox.Position = UDim2.new(0, 115, 0, 5)
+InfoBox.Size = UDim2.new(0, 220, 0, 30)
+InfoBox.Position = UDim2.new(0, 135, 0, 3)
 InfoBox.BackgroundColor3 = Color3.fromRGB(76, 175, 80)
 InfoBox.BorderSizePixel = 0
 InfoBox.ZIndex = 12
@@ -438,7 +458,7 @@ InfoLabel.Size = UDim2.new(1, 0, 1, 0)
 InfoLabel.Text = "黑脚本 V2.0"
 InfoLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 InfoLabel.Font = Enum.Font.GothamBold
-InfoLabel.TextSize = 9
+InfoLabel.TextSize = 10
 InfoLabel.BackgroundTransparency = 1
 InfoLabel.ZIndex = 13
 InfoLabel.Parent = InfoBox
@@ -451,8 +471,8 @@ spawn(function()
 end)
 
 local AdminBadge = Instance.new("Frame")
-AdminBadge.Size = UDim2.new(0, 75, 0, 26)
-AdminBadge.Position = UDim2.new(0, 310, 0, 5)
+AdminBadge.Size = UDim2.new(0, 85, 0, 30)
+AdminBadge.Position = UDim2.new(0, 359, 0, 3)
 AdminBadge.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
 AdminBadge.BorderSizePixel = 0
 AdminBadge.ZIndex = 12
@@ -476,10 +496,10 @@ RunService.RenderStepped:Connect(function(delta)
 end)
 local AdminText = Instance.new("TextLabel")
 AdminText.Size = UDim2.new(1, 0, 1, 0)
-AdminText.Text = "👑 管理员"
+AdminText.Text = "👑 管理员版本"
 AdminText.TextColor3 = Color3.fromRGB(0, 0, 0)
 AdminText.Font = Enum.Font.GothamBold
-AdminText.TextSize = 10
+AdminText.TextSize = 11
 AdminText.BackgroundTransparency = 1
 AdminText.ZIndex = 13
 AdminText.Parent = AdminBadge
@@ -1527,7 +1547,8 @@ Players.PlayerAdded:Connect(function(p) if authorEspEnabled then addAuthorESP(p)
 Players.PlayerRemoving:Connect(function(p)
     if espHighlights[p] then pcall(function() espHighlights[p]:Destroy() end); espHighlights[p] = nil end
     if espBillboards[p] then pcall(function() espBillboards[p]:Destroy() end); espBillboards[p] = nil end
-end-- 第6段：pageContents 公告 + 通用 + 战斗 + 整活 + 音乐
+end)
+-- 第6段：pageContents 公告 + 通用 + 战斗 + 整活 + 音乐
 
 local pageContents = {
     ["公告"] = {type = "text"},
@@ -1761,6 +1782,7 @@ pageContents["国内脚本"] = {
         {name = "黄某脚本", desc = "拉完了缝合", icon = "😞", url = "https://rawscripts.net/raw/Universal-Script-HMscript-50384"},
         {name = "Loarder脚本", desc = "拉完了", icon = "🤔", url = "https://raw.githubusercontent.com/Jilxi/123/refs/heads/main/Loader.lua"},
     }
+}
 -- 第8段：收集功能 + 页面生成 + 搜索框
 
 local allFunctionItems = {}
@@ -2371,7 +2393,110 @@ end
 
 for _, item in ipairs(settingsItems) do
     createSettingsCard(settingsPage, item)
-en
+end
+-- 第10段：隐藏面板按钮 + 删除脚本按钮
+
+HideButton.MouseButton1Click:Connect(function()
+    isOpen = false
+    MainFrame.Visible = false
+end)
+
+CloseButton.MouseButton1Click:Connect(function()
+    local confirmGui = Instance.new("ScreenGui")
+    confirmGui.Parent = PlayerGui
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    bg.BackgroundTransparency = 0.5
+    bg.ZIndex = 999
+    bg.Parent = confirmGui
+    
+    local popup = Instance.new("Frame")
+    popup.Size = UDim2.new(0, 320, 0, 180)
+    popup.Position = UDim2.new(0.5, -160, 0.5, -90)
+    popup.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    popup.BorderSizePixel = 0
+    popup.ZIndex = 1000
+    popup.Parent = confirmGui
+    local popupCorner = Instance.new("UICorner"); popupCorner.CornerRadius = UDim.new(0, 12); popupCorner.Parent = popup
+    
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 40); title.Position = UDim2.new(0, 0, 0, 10)
+    title.Text = "确认删除脚本"; title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.Font = Enum.Font.GothamBold; title.TextSize = 18; title.BackgroundTransparency = 1
+    title.ZIndex = 1001; title.Parent = popup
+    
+    local desc = Instance.new("TextLabel")
+    desc.Size = UDim2.new(1, -20, 0, 40); desc.Position = UDim2.new(0, 10, 0, 50)
+    desc.Text = "确定要删除黑脚本吗？"
+    desc.TextColor3 = Color3.fromRGB(200, 200, 200)
+    desc.Font = Enum.Font.Gotham; desc.TextSize = 14; desc.BackgroundTransparency = 1
+    desc.ZIndex = 1001; desc.Parent = popup
+    
+    local btn1 = Instance.new("TextButton")
+    btn1.Size = UDim2.new(0, 80, 0, 40); btn1.Position = UDim2.new(0.5, -90, 0, 110)
+    btn1.Text = "确定"; btn1.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn1.Font = Enum.Font.GothamBold; btn1.TextSize = 14; btn1.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+    btn1.BorderSizePixel = 0; btn1.ZIndex = 1001; btn1.AutoButtonColor = false; btn1.Parent = popup
+    local btn1Corner = Instance.new("UICorner"); btn1Corner.CornerRadius = UDim.new(0, 8); btn1Corner.Parent = btn1
+    
+    local btn2 = Instance.new("TextButton")
+    btn2.Size = UDim2.new(0, 80, 0, 40); btn2.Position = UDim2.new(0.5, 10, 0, 110)
+    btn2.Text = "取消"; btn2.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn2.Font = Enum.Font.GothamBold; btn2.TextSize = 14; btn2.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    btn2.BorderSizePixel = 0; btn2.ZIndex = 1001; btn2.AutoButtonColor = false; btn2.Parent = popup
+    local btn2Corner = Instance.new("UICorner"); btn2Corner.CornerRadius = UDim.new(0, 8); btn2Corner.Parent = btn2
+    
+    local resultLabel = Instance.new("TextLabel")
+    resultLabel.Size = UDim2.new(1, -20, 0, 30); resultLabel.Position = UDim2.new(0, 10, 0, 155)
+    resultLabel.Text = ""; resultLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    resultLabel.Font = Enum.Font.Gotham; resultLabel.TextSize = 12; resultLabel.BackgroundTransparency = 1
+    resultLabel.ZIndex = 1001; resultLabel.Parent = popup
+    
+    btn2.MouseButton1Click:Connect(function()
+        confirmGui:Destroy()
+    end)
+    
+    btn1.MouseButton1Click:Connect(function()
+        resultLabel.Text = ""
+        local step2 = Instance.new("TextLabel")
+        step2.Size = UDim2.new(1, -20, 0, 30); step2.Position = UDim2.new(0, 10, 0, 50)
+        step2.Text = "二次验证：请输入 1 或 2"
+        step2.TextColor3 = Color3.fromRGB(200, 200, 200)
+        step2.Font = Enum.Font.Gotham; step2.TextSize = 14; step2.BackgroundTransparency = 1
+        step2.ZIndex = 1001; step2.Parent = popup
+        desc.Visible = false
+        
+        local vbtn1 = Instance.new("TextButton")
+        vbtn1.Size = UDim2.new(0, 80, 0, 40); vbtn1.Position = UDim2.new(0.5, -90, 0, 110)
+        vbtn1.Text = "1"; vbtn1.TextColor3 = Color3.fromRGB(255, 255, 255)
+        vbtn1.Font = Enum.Font.GothamBold; vbtn1.TextSize = 20; vbtn1.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
+        vbtn1.BorderSizePixel = 0; vbtn1.ZIndex = 1001; vbtn1.AutoButtonColor = false; vbtn1.Parent = popup
+        local vbtn1Corner = Instance.new("UICorner"); vbtn1Corner.CornerRadius = UDim.new(0, 8); vbtn1Corner.Parent = vbtn1
+        
+        local vbtn2 = Instance.new("TextButton")
+        vbtn2.Size = UDim2.new(0, 80, 0, 40); vbtn2.Position = UDim2.new(0.5, 10, 0, 110)
+        vbtn2.Text = "2"; vbtn2.TextColor3 = Color3.fromRGB(255, 255, 255)
+        vbtn2.Font = Enum.Font.GothamBold; vbtn2.TextSize = 20; vbtn2.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+        vbtn2.BorderSizePixel = 0; vbtn2.ZIndex = 1001; vbtn2.AutoButtonColor = false; vbtn2.Parent = popup
+        local vbtn2Corner = Instance.new("UICorner"); vbtn2Corner.CornerRadius = UDim.new(0, 8); vbtn2Corner.Parent = vbtn2
+        
+        btn1.Visible = false
+        btn2.Visible = false
+        
+        vbtn1.MouseButton1Click:Connect(function()
+            resultLabel.Text = "验证失败，无法删除脚本"
+            resultLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+            wait(0.8)
+            confirmGui:Destroy()
+        end)
+        
+        vbtn2.MouseButton1Click:Connect(function()
+            confirmGui:Destroy()
+            if ScreenGui then ScreenGui:Destroy() end
+        end)
+    end)
+end)
 -- 第11段：打开/关闭动画
 
 contentPages["公告"].Visible = true
