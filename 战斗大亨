@@ -1,0 +1,453 @@
+-- 军事战斗大亨
+-- WindUI蓝白版
+
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+if not WindUI then return end
+
+WindUI:AddTheme({
+    Name = "冰白",
+    Accent = "#80C0FF",
+    Outline = "#6090C0",
+    Text = "#FFFFFF",
+    Placeholder = "#D0E0FF",
+})
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local LocalPlayer = Players.LocalPlayer
+
+local autoAttackEnemyEnabled = false
+local enemyConnection = nil
+local attackInterval = 0.3
+local enemyRange = 300
+local lastEnemyAttack = 0
+local enemyHitCount = 0
+local enemyCount = 0
+
+local teleportAttackEnabled = false
+local teleportAttackConnection = nil
+local targetPlayerName = nil
+local playerAttackInterval = 0.1
+local teleportHeight = 3
+local lastPlayerAttack = 0
+local playerHitCount = 0
+
+local atmCooldown = 0.5
+local returnAfterSteal = true
+local startCFrame = nil
+local stealing = false
+local atmStealCount = 0
+
+local useToolEvent = nil
+local function getUseToolEvent()
+    if useToolEvent then return useToolEvent end
+    local rs = game:GetService("ReplicatedStorage")
+    local events = rs:FindFirstChild("Events")
+    if not events then return nil end
+    useToolEvent = events:FindFirstChild("UseToolAbility")
+    return useToolEvent
+end
+
+local function getHRP()
+    local char = LocalPlayer.Character
+    if not char then return nil end
+    return char:FindFirstChild("HumanoidRootPart")
+end
+
+local function recordStartPosition()
+    local hrp = getHRP()
+    if hrp then
+        startCFrame = hrp.CFrame
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(2)
+    recordStartPosition()
+end)
+
+task.spawn(function()
+    task.wait(2)
+    recordStartPosition()
+end)
+
+local function getTargetPart(target)
+    if not target then return nil end
+    return target:FindFirstChild("Torso")
+        or target:FindFirstChild("HumanoidRootPart")
+        or target:FindFirstChild("Body")
+        or target.PrimaryPart
+end
+
+local function getVictimId(target)
+    if not target then return 1 end
+    local id = target:GetAttribute("ID")
+    if id then return tonumber(id) or id end
+    return 1
+end
+
+local function attackTarget(target)
+    if not target then return false end
+    local event = getUseToolEvent()
+    if not event then return false end
+    local hrp = getHRP()
+    if not hrp then return false end
+    local part = getTargetPart(target)
+    if not part then return false end
+    local victimId = getVictimId(target)
+    local hitPosition = part.Position
+    local origin = hrp.Position + Vector3.new(0, 1, 0)
+    local success = false
+    pcall(function()
+        event:FireServer({
+            victimId = victimId,
+            hitPart = "Body",
+            hitPosition = hitPosition,
+            origin = origin,
+        })
+        success = true
+    end)
+    return success
+end
+
+local function getCreaturesFolder()
+    local map = workspace:FindFirstChild("Map")
+    if not map then return nil end
+    return map:FindFirstChild("Creatures")
+end
+
+local function findNearestEnemy()
+    local hrp = getHRP()
+    if not hrp then return nil end
+    local nearest = nil
+    local nearestDist = enemyRange
+    local count = 0
+    local creatures = getCreaturesFolder()
+    if not creatures then return nil end
+    for _, obj in pairs(creatures:GetChildren()) do
+        if obj:IsA("Model") and obj.Name:lower():find("enemy") then
+            local part = getTargetPart(obj)
+            if part then
+                local dist = (hrp.Position - part.Position).Magnitude
+                count = count + 1
+                if dist < nearestDist then
+                    nearestDist = dist
+                    nearest = obj
+                end
+            end
+        end
+    end
+    enemyCount = count
+    return nearest, nearestDist
+end
+
+local function findPlayerByDisplayName(displayName)
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.DisplayName == displayName then
+            return plr
+        end
+    end
+    return nil
+end
+
+local function getPlayerDisplayNames()
+    local names = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            names[#names + 1] = player.DisplayName
+        end
+    end
+    table.sort(names)
+    return names
+end
+
+local function toggleAutoAttackEnemy(enabled)
+    autoAttackEnemyEnabled = enabled
+    if enabled then
+        enemyConnection = RunService.Heartbeat:Connect(function()
+            if not autoAttackEnemyEnabled then return end
+            local now = tick()
+            if now - lastEnemyAttack < attackInterval then return end
+            local target = findNearestEnemy()
+            if target then
+                if attackTarget(target) then
+                    enemyHitCount = enemyHitCount + 1
+                end
+            end
+            lastEnemyAttack = now
+        end)
+    else
+        if enemyConnection then
+            enemyConnection:Disconnect()
+            enemyConnection = nil
+        end
+    end
+end
+
+local function startTeleportAttack()
+    teleportAttackConnection = RunService.Heartbeat:Connect(function()
+        if not teleportAttackEnabled then return end
+        if not targetPlayerName or targetPlayerName == "" then return end
+        local now = tick()
+        local targetPlayer = findPlayerByDisplayName(targetPlayerName)
+        if not targetPlayer then 
+            teleportAttackEnabled = false
+            if teleportAttackConnection then
+                teleportAttackConnection:Disconnect()
+                teleportAttackConnection = nil
+            end
+            return 
+        end
+        local targetChar = targetPlayer.Character
+        if not targetChar then return end
+        local targetPart = getTargetPart(targetChar)
+        if not targetPart then return end
+        local hrp = getHRP()
+        if not hrp then return end
+        
+        hrp.CFrame = CFrame.new(targetPart.Position - Vector3.new(0, teleportHeight, 0))
+        hrp.Velocity = Vector3.new(0, 0, 0)
+        
+        if now - lastPlayerAttack >= playerAttackInterval then
+            if attackTarget(targetChar) then
+                playerHitCount = playerHitCount + 1
+            end
+            lastPlayerAttack = now
+        end
+    end)
+end
+
+local function toggleTeleportAttack(enabled)
+    teleportAttackEnabled = enabled
+    if enabled then
+        if not targetPlayerName or targetPlayerName == "" then
+            WindUI:Notify({Title = "错误", Content = "请先选择目标玩家", Duration = 2})
+            teleportAttackEnabled = false
+            return
+        end
+        startTeleportAttack()
+    else
+        if teleportAttackConnection then
+            teleportAttackConnection:Disconnect()
+            teleportAttackConnection = nil
+        end
+    end
+end
+
+local function getAllATMs()
+    local atms = {}
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if (obj:IsA("Model") or obj:IsA("BasePart")) and obj.Name:lower():find("atm") then
+            atms[#atms + 1] = obj
+        end
+    end
+    return atms
+end
+
+local function getPos(obj)
+    if not obj then return nil end
+    if obj:IsA("BasePart") then return obj.Position end
+    if obj:IsA("Model") then
+        local p = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+        if p then return p.Position end
+    end
+    return nil
+end
+
+local function stealAllATMs()
+    if stealing then return end
+    local hrp = getHRP()
+    if not hrp then return end
+    if not startCFrame then
+        startCFrame = hrp.CFrame
+    end
+    local atms = getAllATMs()
+    if #atms == 0 then
+        WindUI:Notify({Title = "偷钱", Content = "没有找到 ATM", Duration = 2})
+        return
+    end
+    stealing = true
+    task.spawn(function()
+        for i, atm in ipairs(atms) do
+            local pos = getPos(atm)
+            if pos then
+                hrp.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
+                hrp.Velocity = Vector3.new(0, 0, 0)
+                task.wait(0.1)
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                task.wait(0.05)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                task.wait(atmCooldown)
+                atmStealCount = atmStealCount + 1
+            end
+        end
+        if returnAfterSteal and startCFrame then
+            task.wait(0.3)
+            hrp.CFrame = startCFrame
+            hrp.Velocity = Vector3.new(0, 0, 0)
+        end
+        WindUI:Notify({Title = "偷钱完成", Content = "已处理 " .. #atms .. " 个 ATM", Duration = 3})
+        stealing = false
+    end)
+end
+
+local Window = WindUI:CreateWindow({
+    Title = "军事战斗大亨",
+    Icon = "solar:moon-bold",
+    Size = UDim2.fromOffset(600, 350),
+    ToggleKey = Enum.KeyCode.RightShift,
+    Theme = "冰白",
+    Transparent = true,
+    ScrollBarEnabled = true,
+})
+
+Window:Tab({Title = "公告", Icon = "solar:info-circle-bold"}):Paragraph({
+    Title = "黑脚本--军事战斗大亨",
+    Desc = "功能：自动打人机 | 传送打玩家 | 一键偷钱\n私人小雨"
+})
+
+local EnemyTab = Window:Tab({Title = "打人机", Icon = "solar:star-bold"})
+
+EnemyTab:Toggle({
+    Title = "自动打人机",
+    Value = false,
+    Callback = function(v)
+        toggleAutoAttackEnemy(v)
+    end,
+})
+
+EnemyTab:Slider({
+    Title = "攻击范围",
+    Value = {Min = 20, Max = 1000, Default = 300},
+    Step = 10,
+    Callback = function(v)
+        enemyRange = v
+    end,
+})
+
+EnemyTab:Slider({
+    Title = "攻击间隔",
+    Value = {Min = 0.05, Max = 1, Default = 0.3},
+    Step = 0.05,
+    Callback = function(v)
+        attackInterval = v
+    end,
+})
+
+local PlayerTab = Window:Tab({Title = "打玩家", Icon = "solar:user-bold"})
+
+local playerDropdown = PlayerTab:Dropdown({
+    Title = "目标玩家",
+    Values = getPlayerDisplayNames(),
+    Value = "",
+    Callback = function(selected)
+        targetPlayerName = selected
+    end,
+})
+
+PlayerTab:Toggle({
+    Title = "传送攻击",
+    Value = false,
+    Callback = function(v)
+        toggleTeleportAttack(v)
+    end,
+})
+
+PlayerTab:Slider({
+    Title = "攻击间隔",
+    Value = {Min = 0.05, Max = 1, Default = 0.1},
+    Step = 0.05,
+    Callback = function(v)
+        playerAttackInterval = v
+    end,
+})
+
+task.spawn(function()
+    while true do
+        task.wait(1)
+        local names = getPlayerDisplayNames()
+        pcall(function()
+            playerDropdown:SetValues(names)
+        end)
+        if targetPlayerName and targetPlayerName ~= "" then
+            local stillHere = false
+            for _, n in ipairs(names) do
+                if n == targetPlayerName then
+                    stillHere = true
+                    break
+                end
+            end
+            if not stillHere then
+                targetPlayerName = nil
+                pcall(function()
+                    playerDropdown:SetValue("")
+                end)
+                if teleportAttackEnabled then
+                    teleportAttackEnabled = false
+                    if teleportAttackConnection then
+                        teleportAttackConnection:Disconnect()
+                        teleportAttackConnection = nil
+                    end
+                end
+            end
+        end
+    end
+end)
+
+local MoneyTab = Window:Tab({Title = "偷钱", Icon = "solar:dollar-bold"})
+
+MoneyTab:Button({
+    Title = "偷所有 ATM",
+    Callback = function()
+        stealAllATMs()
+    end,
+})
+
+MoneyTab:Toggle({
+    Title = "偷完回原位",
+    Value = true,
+    Callback = function(v)
+        returnAfterSteal = v
+    end,
+})
+
+MoneyTab:Slider({
+    Title = "ATM 停留时间",
+    Value = {Min = 0.1, Max = 2, Default = 0.5},
+    Step = 0.1,
+    Callback = function(v)
+        atmCooldown = v
+    end,
+})
+
+local SettingsTab = Window:Tab({Title = "设置", Icon = "solar:settings-bold"})
+local statusPara = SettingsTab:Paragraph({Title = "功能状态", Desc = "加载中..."})
+
+task.spawn(function()
+    while true do
+        task.wait(1)
+        findNearestEnemy()
+        statusPara:SetDesc(
+            "打人机：" .. (autoAttackEnemyEnabled and "✅" or "❌") .. "\n" ..
+            "Enemy 数量：" .. enemyCount .. "\n" ..
+            "攻击次数：" .. enemyHitCount .. "\n" ..
+            "传送攻击：" .. (teleportAttackEnabled and "✅" or "❌") .. "\n" ..
+            "目标：" .. (targetPlayerName or "未选择") .. "\n" ..
+            "玩家攻击次数：" .. playerHitCount .. "\n" ..
+            "ATM 数量：" .. #getAllATMs() .. "\n" ..
+            "已偷 ATM：" .. atmStealCount
+        )
+    end
+end)
+
+SettingsTab:Button({
+    Title = "关闭面板",
+    Callback = function() Window:Close() end
+})
+
+WindUI:Notify({
+    Title = "军事战斗大亨",
+    Content = "加载完成",
+    Duration = 2,
+})
