@@ -1,0 +1,838 @@
+-- 路线06
+-- WindUI蓝白版
+
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+if not WindUI then return end
+
+WindUI:AddTheme({
+    Name = "冰白",
+    Accent = "#80C0FF",
+    Outline = "#6090C0",
+    Text = "#FFFFFF",
+    Placeholder = "#D0E0FF",
+})
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
+
+local killAuraEnabled = false
+local killAuraConnection = nil
+local nightVisionEnabled = false
+local pickEnabled = false
+local pickTask = nil
+local zombieEspEnabled = false
+local playerEspEnabled = false
+local itemEspEnabled = false
+local attackRange = 50
+local attackInterval = 0.05
+local pickDelay = 0.5
+local lastAttack = 0
+local hitCount = 0
+local zombieCount = 0
+local pickedCount = 0
+local speedValue = 50
+local speedEnabled = false
+local speedConnection = nil
+local selectedTarget = ""
+
+local excludeItems = {}
+local zombieHighlights = {}
+local playerHighlights = {}
+local itemHighlights = {}
+local originalLighting = {}
+local nightVisionObjects = {}
+
+local function getHitReg()
+    local rs = game:GetService("ReplicatedStorage")
+    local remotes = rs:FindFirstChild("remotes")
+    if not remotes then return nil end
+    return remotes:FindFirstChild("hitReg")
+end
+
+local function getActions()
+    local rs = game:GetService("ReplicatedStorage")
+    local remotes = rs:FindFirstChild("remotes")
+    if not remotes then return nil end
+    return remotes:FindFirstChild("actions")
+end
+
+local function getZombiesFolder()
+    local gameFolder = workspace:FindFirstChild("game")
+    if not gameFolder then return nil end
+    local map = gameFolder:FindFirstChild("map")
+    if not map then return nil end
+    return map:FindFirstChild("zombies")
+end
+
+local function getItemsFolder()
+    local gameFolder = workspace:FindFirstChild("game")
+    if not gameFolder then return nil end
+    local map = gameFolder:FindFirstChild("map")
+    if not map then return nil end
+    return map:FindFirstChild("items")
+end
+
+local function getAllZombies()
+    local zombies = {}
+    local folder = getZombiesFolder()
+    if not folder then return zombies end
+    for _, zombie in pairs(folder:GetChildren()) do
+        if zombie:IsA("Model") then
+            local humanoid = zombie:FindFirstChildOfClass("Humanoid")
+            if humanoid and humanoid.Health > 0 then
+                zombies[#zombies + 1] = zombie
+            end
+        end
+    end
+    zombieCount = #zombies
+    return zombies
+end
+
+local function scanAllItemNames()
+    local names = {}
+    local seen = {}
+    local itemsFolder = getItemsFolder()
+    if not itemsFolder then return names end
+    for _, obj in pairs(itemsFolder:GetDescendants()) do
+        if obj:IsA("Model") or obj:IsA("BasePart") or obj:IsA("Tool") then
+            if not seen[obj.Name] then
+                seen[obj.Name] = true
+                names[#names + 1] = obj.Name
+            end
+        end
+    end
+    table.sort(names)
+    return names
+end
+
+local function attackZombie(zombie)
+    if not zombie then return false end
+    local hitReg = getHitReg()
+    if not hitReg then return false end
+    local part = zombie:FindFirstChild("Right Arm") or zombie:FindFirstChild("Left Arm") or zombie:FindFirstChild("HumanoidRootPart") or zombie:FindFirstChild("Torso") or zombie:FindFirstChild("Head") or zombie.PrimaryPart
+    if not part then
+        for _, child in pairs(zombie:GetChildren()) do
+            if child:IsA("BasePart") then
+                part = child
+                break
+            end
+        end
+    end
+    if not part then return false end
+    local attackPos = part.Position
+    local success = false
+    pcall(function()
+        hitReg:FireServer(table.unpack({ [1] = zombie, [2] = part, [3] = attackPos }))
+        success = true
+    end)
+    if success then hitCount = hitCount + 1 end
+    return success
+end
+
+local function toggleKillAura(enabled)
+    killAuraEnabled = enabled
+    if enabled then
+        killAuraConnection = RunService.Heartbeat:Connect(function()
+            if not killAuraEnabled then return end
+            local now = tick()
+            if now - lastAttack < attackInterval then return end
+            local zombies = getAllZombies()
+            local character = LocalPlayer.Character
+            if not character then return end
+            local hrp = character:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+            for _, zombie in pairs(zombies) do
+                local zPart = zombie:FindFirstChild("Right Arm") or zombie:FindFirstChild("HumanoidRootPart") or zombie.PrimaryPart
+                if zPart then
+                    local distance = (hrp.Position - zPart.Position).Magnitude
+                    if distance <= attackRange then
+                        attackZombie(zombie)
+                    end
+                end
+            end
+            lastAttack = now
+        end)
+    else
+        if killAuraConnection then
+            killAuraConnection:Disconnect()
+            killAuraConnection = nil
+        end
+    end
+end
+
+local function createZombieESP(zombie)
+    if not zombie then return end
+    if zombieHighlights[zombie] then return end
+    local highlight = Instance.new("Highlight")
+    highlight.FillColor = Color3.fromRGB(255, 0, 0)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 0)
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = zombie
+    
+    local head = zombie:FindFirstChild("Head") or zombie:FindFirstChild("HumanoidRootPart") or zombie.PrimaryPart
+    local bg = nil
+    if head then
+        bg = Instance.new("BillboardGui")
+        bg.Size = UDim2.new(0, 200, 0, 40)
+        bg.AlwaysOnTop = true
+        bg.MaxDistance = math.huge
+        bg.Parent = head
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Text = zombie.Name
+        label.TextColor3 = Color3.fromRGB(255, 100, 100)
+        label.Font = Enum.Font.GothamBold
+        label.TextSize = 14
+        label.TextStrokeTransparency = 0.5
+        label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        label.Parent = bg
+    end
+    
+    zombieHighlights[zombie] = {H = highlight, B = bg}
+end
+
+local function toggleZombieESP(enabled)
+    zombieEspEnabled = enabled
+    if enabled then
+        for _, zombie in pairs(getAllZombies()) do
+            createZombieESP(zombie)
+        end
+    else
+        for zombie, data in pairs(zombieHighlights) do
+            if data.H and data.H.Parent then data.H:Destroy() end
+            if data.B and data.B.Parent then data.B:Destroy() end
+        end
+        zombieHighlights = {}
+    end
+end
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if zombieEspEnabled then
+            for _, zombie in pairs(getAllZombies()) do
+                if not zombieHighlights[zombie] then createZombieESP(zombie) end
+            end
+            for zombie, data in pairs(zombieHighlights) do
+                if not zombie or not zombie.Parent then
+                    if data.H and data.H.Parent then data.H:Destroy() end
+                    if data.B and data.B.Parent then data.B:Destroy() end
+                    zombieHighlights[zombie] = nil
+                end
+            end
+        end
+    end
+end)
+
+local function createPlayerESP(plr)
+    if not plr or not plr.Character then return end
+    if playerHighlights[plr] then return end
+    local highlight = Instance.new("Highlight")
+    highlight.FillColor = Color3.fromRGB(0, 150, 255)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = plr.Character
+    
+    local head = plr.Character:FindFirstChild("Head")
+    local bg = nil
+    if head then
+        bg = Instance.new("BillboardGui")
+        bg.Size = UDim2.new(0, 200, 0, 40)
+        bg.AlwaysOnTop = true
+        bg.MaxDistance = math.huge
+        bg.Parent = head
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Text = plr.Name
+        label.TextColor3 = Color3.fromRGB(100, 200, 255)
+        label.Font = Enum.Font.GothamBold
+        label.TextSize = 14
+        label.TextStrokeTransparency = 0.5
+        label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        label.Parent = bg
+    end
+    
+    playerHighlights[plr] = {H = highlight, B = bg}
+end
+
+local function togglePlayerESP(enabled)
+    playerEspEnabled = enabled
+    if enabled then
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character then
+                createPlayerESP(plr)
+            end
+        end
+    else
+        for plr, data in pairs(playerHighlights) do
+            if data.H and data.H.Parent then data.H:Destroy() end
+            if data.B and data.B.Parent then data.B:Destroy() end
+        end
+        playerHighlights = {}
+    end
+end
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if playerEspEnabled then
+            for _, plr in pairs(Players:GetPlayers()) do
+                if plr ~= LocalPlayer and plr.Character and not playerHighlights[plr] then
+                    createPlayerESP(plr)
+                end
+            end
+            for plr, data in pairs(playerHighlights) do
+                if not plr or not plr.Character or not plr.Character.Parent then
+                    if data.H and data.H.Parent then data.H:Destroy() end
+                    if data.B and data.B.Parent then data.B:Destroy() end
+                    playerHighlights[plr] = nil
+                end
+            end
+        end
+    end
+end)
+
+local function createItemESP(item)
+    if not item then return end
+    if itemHighlights[item] then return end
+    local highlight = Instance.new("Highlight")
+    highlight.FillColor = Color3.fromRGB(50, 255, 50)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = item
+    
+    local root = item:IsA("Model") and (item.PrimaryPart or item:FindFirstChildWhichIsA("BasePart")) or (item:IsA("BasePart") and item) or (item:IsA("Tool") and (item:FindFirstChild("Handle") or item:FindFirstChildWhichIsA("BasePart")))
+    local bg = nil
+    if root then
+        bg = Instance.new("BillboardGui")
+        bg.Size = UDim2.new(0, 200, 0, 40)
+        bg.AlwaysOnTop = true
+        bg.MaxDistance = math.huge
+        bg.Parent = root
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Text = item.Name
+        label.TextColor3 = Color3.fromRGB(100, 255, 100)
+        label.Font = Enum.Font.GothamBold
+        label.TextSize = 14
+        label.TextStrokeTransparency = 0.5
+        label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+        label.Parent = bg
+    end
+    
+    itemHighlights[item] = {H = highlight, B = bg}
+end
+
+local function getAllItemsForESP()
+    local results = {}
+    local itemsFolder = getItemsFolder()
+    if not itemsFolder then return results end
+    for _, obj in pairs(itemsFolder:GetDescendants()) do
+        if obj:IsA("Model") or obj:IsA("BasePart") or obj:IsA("Tool") then
+            results[#results + 1] = obj
+        end
+    end
+    return results
+end
+
+local function toggleItemESP(enabled)
+    itemEspEnabled = enabled
+    if enabled then
+        for _, item in pairs(getAllItemsForESP()) do
+            createItemESP(item)
+        end
+    else
+        for item, data in pairs(itemHighlights) do
+            if data.H and data.H.Parent then data.H:Destroy() end
+            if data.B and data.B.Parent then data.B:Destroy() end
+        end
+        itemHighlights = {}
+    end
+end
+
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if itemEspEnabled then
+            for _, item in pairs(getAllItemsForESP()) do
+                if not itemHighlights[item] then createItemESP(item) end
+            end
+            for item, data in pairs(itemHighlights) do
+                if not item or not item.Parent then
+                    if data.H and data.H.Parent then data.H:Destroy() end
+                    if data.B and data.B.Parent then data.B:Destroy() end
+                    itemHighlights[item] = nil
+                end
+            end
+        end
+    end
+end)
+
+local function enableNightVision()
+    originalLighting = {
+        Brightness = Lighting.Brightness,
+        Ambient = Lighting.Ambient,
+        OutdoorAmbient = Lighting.OutdoorAmbient,
+        ClockTime = Lighting.ClockTime,
+        FogEnd = Lighting.FogEnd,
+        FogStart = Lighting.FogStart,
+        FogColor = Lighting.FogColor,
+        GlobalShadows = Lighting.GlobalShadows,
+        EnvironmentDiffuseScale = Lighting.EnvironmentDiffuseScale,
+        EnvironmentSpecularScale = Lighting.EnvironmentSpecularScale,
+    }
+    Lighting.Brightness = 3
+    Lighting.Ambient = Color3.fromRGB(180, 180, 180)
+    Lighting.OutdoorAmbient = Color3.fromRGB(180, 180, 180)
+    Lighting.ClockTime = 14
+    Lighting.FogEnd = 100000
+    Lighting.FogStart = 0
+    Lighting.GlobalShadows = false
+    Lighting.EnvironmentDiffuseScale = 1
+    Lighting.EnvironmentSpecularScale = 1
+    local cc = Instance.new("ColorCorrectionEffect")
+    cc.Brightness = 0.3
+    cc.Contrast = 0.1
+    cc.Saturation = 0.1
+    cc.Parent = Lighting
+    nightVisionObjects[#nightVisionObjects + 1] = cc
+    local bloom = Instance.new("BloomEffect")
+    bloom.Intensity = 1
+    bloom.Size = 24
+    bloom.Threshold = 1
+    bloom.Parent = Lighting
+    nightVisionObjects[#nightVisionObjects + 1] = bloom
+    for _, child in pairs(Lighting:GetChildren()) do
+        if child:IsA("Atmosphere") then child.Density = 0 end
+    end
+end
+
+local function disableNightVision()
+    if originalLighting.Brightness then
+        Lighting.Brightness = originalLighting.Brightness
+        Lighting.Ambient = originalLighting.Ambient
+        Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+        Lighting.ClockTime = originalLighting.ClockTime
+        Lighting.FogEnd = originalLighting.FogEnd
+        Lighting.FogStart = originalLighting.FogStart
+        Lighting.FogColor = originalLighting.FogColor
+        Lighting.GlobalShadows = originalLighting.GlobalShadows
+        Lighting.EnvironmentDiffuseScale = originalLighting.EnvironmentDiffuseScale
+        Lighting.EnvironmentSpecularScale = originalLighting.EnvironmentSpecularScale
+    end
+    for _, obj in pairs(nightVisionObjects) do
+        if obj and obj.Parent then obj:Destroy() end
+    end
+    nightVisionObjects = {}
+end
+
+local function toggleNightVision(enabled)
+    nightVisionEnabled = enabled
+    if enabled then enableNightVision() else disableNightVision() end
+end
+
+local function getCharacter()
+    return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+end
+
+local function getItemPosition(item)
+    if not item then return nil end
+    if item:IsA("BasePart") then return item.Position end
+    if item:IsA("Model") then
+        local p = item.PrimaryPart or item:FindFirstChild("Handle") or item:FindFirstChildWhichIsA("BasePart")
+        if p then return p.Position end
+    end
+    if item:IsA("Tool") then
+        local p = item:FindFirstChild("Handle") or item:FindFirstChildWhichIsA("BasePart")
+        if p then return p.Position end
+    end
+    return nil
+end
+
+local function isExcluded(itemName)
+    for _, name in pairs(excludeItems) do
+        if name:lower() == itemName:lower() then return true end
+    end
+    return false
+end
+
+local function getAllItems()
+    local results = {}
+    local itemsFolder = getItemsFolder()
+    if not itemsFolder then return results end
+    for _, obj in pairs(itemsFolder:GetDescendants()) do
+        if obj:IsA("Model") or obj:IsA("BasePart") or obj:IsA("Tool") then
+            if not isExcluded(obj.Name) then
+                results[#results + 1] = obj
+            end
+        end
+    end
+    return results
+end
+
+local function pickItem(item)
+    if not item then return false end
+    local char = getCharacter()
+    if not char then return false end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    local pos = getItemPosition(item)
+    if not pos then return false end
+    hrp.CFrame = CFrame.new(pos + Vector3.new(0, 4, 0))
+    hrp.Velocity = Vector3.new(0, 0, 0)
+    task.wait(0.1)
+    local actions = getActions()
+    if actions then
+        pcall(function()
+            actions:FireServer(table.unpack({ [1] = "pickGroundItem", [2] = item }))
+        end)
+    end
+    task.wait(pickDelay)
+    return true
+end
+
+local function pickAllItems()
+    local count = 0
+    for _, item in pairs(getAllItems()) do
+        if not pickEnabled then break end
+        if pickItem(item) then
+            count = count + 1
+            pickedCount = pickedCount + 1
+        end
+    end
+    return count
+end
+
+local function togglePick(enabled)
+    pickEnabled = enabled
+    if enabled then
+        pickTask = task.spawn(function()
+            while pickEnabled do
+                local count = pickAllItems()
+                if count == 0 then task.wait(1) end
+                task.wait(0.1)
+            end
+        end)
+    else
+        if pickTask then
+            task.cancel(pickTask)
+            pickTask = nil
+        end
+    end
+end
+
+local function teleportToCar()
+    local char = getCharacter()
+    if not char then return false end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    local car = workspace:FindFirstChild("defaultCar", true)
+    if not car then
+        WindUI:Notify({Title = "传回汽车", Content = "未找到 defaultCar", Duration = 2})
+        return false
+    end
+    local carPos = nil
+    if car:IsA("Model") then
+        local primary = car.PrimaryPart or car:FindFirstChildWhichIsA("BasePart")
+        if primary then carPos = primary.Position end
+    elseif car:IsA("BasePart") then
+        carPos = car.Position
+    end
+    if not carPos then return false end
+    hrp.CFrame = CFrame.new(carPos + Vector3.new(0, 3, 0))
+    hrp.Velocity = Vector3.new(0, 0, 0)
+    WindUI:Notify({Title = "传回汽车", Content = "已传送到汽车位置", Duration = 2})
+    return true
+end
+
+local function getPlayerNames()
+    local names = {}
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            names[#names + 1] = plr.Name
+        end
+    end
+    if #names == 0 then names[1] = "无其他玩家" end
+    return names
+end
+
+local function teleportToPlayer()
+    if selectedTarget == "" or selectedTarget == "无其他玩家" then return end
+    local target = Players:FindFirstChild(selectedTarget)
+    if target and target.Character then
+        local char = LocalPlayer.Character
+        if char then
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            local targetRoot = target.Character:FindFirstChild("HumanoidRootPart")
+            if hrp and targetRoot then
+                hrp.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 3)
+                WindUI:Notify({Title = "传送成功", Content = target.Name, Duration = 2})
+            end
+        end
+    end
+end
+
+local function setSpeed(speed)
+    local char = getCharacter()
+    if not char then return end
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = speed
+        speedValue = speed
+    end
+end
+
+local function startSpeedBoost()
+    if speedConnection then speedConnection:Disconnect() end
+    speedConnection = RunService.Heartbeat:Connect(function()
+        if not speedEnabled then return end
+        local char = LocalPlayer.Character
+        if not char then return end
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if humanoid then humanoid.WalkSpeed = speedValue end
+    end)
+end
+
+local function toggleSpeed(enabled)
+    speedEnabled = enabled
+    if enabled then
+        startSpeedBoost()
+        setSpeed(speedValue)
+    else
+        if speedConnection then
+            speedConnection:Disconnect()
+            speedConnection = nil
+        end
+        setSpeed(16)
+    end
+end
+
+local function toggleFly(enabled)
+    if enabled then
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/飞饼"))()
+    end
+end
+
+local Window = WindUI:CreateWindow({
+    Title = "黑脚本--路线06",
+    Icon = "solar:moon-bold",
+    Size = UDim2.fromOffset(600, 350),
+    ToggleKey = Enum.KeyCode.RightShift,
+    Theme = "冰白",
+    Transparent = true,
+    ScrollBarEnabled = true,
+})
+
+Window:Tab({Title = "公告", Icon = "solar:info-circle-bold"}):Paragraph({
+    Title = "黑脚本--路线06",
+    Desc = "杀戮光环 | 透视僵尸 | 透视玩家 | 透视物品 | 自动拾取 | 传送 | 玩家功能"
+})
+
+local MainTab = Window:Tab({Title = "主要功能", Icon = "solar:star-bold"})
+
+MainTab:Toggle({
+    Title = "杀戮光环",
+    Value = false,
+    Callback = function(v)
+        toggleKillAura(v)
+    end,
+})
+
+MainTab:Toggle({
+    Title = "透视僵尸",
+    Value = false,
+    Callback = function(v)
+        toggleZombieESP(v)
+    end,
+})
+
+MainTab:Toggle({
+    Title = "透视物品",
+    Value = false,
+    Callback = function(v)
+        toggleItemESP(v)
+    end,
+})
+
+MainTab:Divider()
+
+MainTab:Toggle({
+    Title = "自动拾取",
+    Value = false,
+    Callback = function(v)
+        togglePick(v)
+    end,
+})
+
+local currentScanNames = scanAllItemNames()
+
+MainTab:Dropdown({
+    Title = "不拾取的物品",
+    Values = currentScanNames,
+    Value = {},
+    Multi = true,
+    AllowNone = true,
+    Callback = function(selected)
+        excludeItems = {}
+        if type(selected) == "table" then
+            for _, name in pairs(selected) do
+                excludeItems[#excludeItems + 1] = name
+            end
+        end
+    end,
+})
+
+MainTab:Divider()
+
+MainTab:Slider({
+    Title = "攻击范围",
+    Value = {Min = 5, Max = 200, Default = 50},
+    Step = 1,
+    Callback = function(v)
+        attackRange = v
+    end,
+})
+
+MainTab:Slider({
+    Title = "攻击间隔（秒）",
+    Value = {Min = 0.01, Max = 1, Default = 0.05},
+    Step = 0.01,
+    Callback = function(v)
+        attackInterval = v
+    end,
+})
+
+local TeleportTab = Window:Tab({Title = "传送", Icon = "solar:map-bold"})
+
+TeleportTab:Button({
+    Title = "传回汽车",
+    Callback = function()
+        teleportToCar()
+    end,
+})
+
+TeleportTab:Divider()
+
+local playerNames = getPlayerNames()
+selectedTarget = playerNames[1] or "无其他玩家"
+
+local playerDropdown = TeleportTab:Dropdown({
+    Title = "选择玩家",
+    Values = playerNames,
+    Value = selectedTarget,
+    Callback = function(v)
+        selectedTarget = v
+    end,
+})
+
+TeleportTab:Button({
+    Title = "传送玩家",
+    Callback = function()
+        teleportToPlayer()
+    end,
+})
+
+task.spawn(function()
+    while true do
+        task.wait(2)
+        playerNames = getPlayerNames()
+        pcall(function()
+            playerDropdown:SetValues(playerNames)
+        end)
+    end
+end)
+
+local PlayerTab = Window:Tab({Title = "玩家", Icon = "solar:user-bold"})
+
+PlayerTab:Toggle({
+    Title = "调整移速",
+    Value = false,
+    Callback = function(v)
+        toggleSpeed(v)
+    end,
+})
+
+PlayerTab:Slider({
+    Title = "移速值",
+    Value = {Min = 16, Max = 200, Default = 50},
+    Step = 1,
+    Callback = function(v)
+        speedValue = v
+        if speedEnabled then setSpeed(v) end
+    end,
+})
+
+PlayerTab:Divider()
+
+PlayerTab:Toggle({
+    Title = "夜视",
+    Value = false,
+    Callback = function(v)
+        toggleNightVision(v)
+    end,
+})
+
+PlayerTab:Divider()
+
+PlayerTab:Toggle({
+    Title = "透视玩家",
+    Value = false,
+    Callback = function(v)
+        togglePlayerESP(v)
+    end,
+})
+
+PlayerTab:Divider()
+
+PlayerTab:Toggle({
+    Title = "飞行",
+    Value = false,
+    Callback = function(v)
+        toggleFly(v)
+    end,
+})
+
+local SettingsTab = Window:Tab({Title = "设置", Icon = "solar:settings-bold"})
+local statusPara = SettingsTab:Paragraph({Title = "功能状态", Desc = "加载中..."})
+
+task.spawn(function()
+    while true do
+        task.wait(1)
+        statusPara:SetDesc(
+            "僵尸：" .. zombieCount .. "\n" ..
+            "攻击：" .. hitCount .. "\n" ..
+            "拾取：" .. pickedCount .. "\n" ..
+            "扫描物品：" .. #currentScanNames .. " 种\n" ..
+            "排除物品：" .. #excludeItems .. " 种\n" ..
+            "透视僵尸：" .. (zombieEspEnabled and "✅" or "❌") .. "\n" ..
+            "透视玩家：" .. (playerEspEnabled and "✅" or "❌") .. "\n" ..
+            "透视物品：" .. (itemEspEnabled and "✅" or "❌") .. "\n" ..
+            "夜视：" .. (nightVisionEnabled and "✅" or "❌") .. "\n" ..
+            "移速：" .. (speedEnabled and "✅" or "❌")
+        )
+    end
+end)
+
+SettingsTab:Button({
+    Title = "关闭面板",
+    Callback = function()
+        Window:Close()
+    end,
+})
+
+WindUI:Notify({
+    Title = "路线06",
+    Content = "加载完成，扫描到 " .. #currentScanNames .. " 种物品",
+    Duration = 3,
+})
