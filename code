@@ -1814,6 +1814,7 @@ pageContents["服务器"] = {
         {name = "墨水(别催了)", desc = "点击执行", icon = "😢", url = "https://raw.githubusercontent.com/hgvuyguyg/inkgames.github.io/refs/heads/main/ringta.lua"},
         {name = "无尽旅馆", desc = "点击执行", icon = "😎", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/k"},
         {name = "力量传奇", desc = "点击执行", icon = "💪🏼", url = "https://raw.githubusercontent.com/hgvuyguyg/jjjjjjjjj/main/力量"},
+        {name = "路线06", desc = "点击执行", icon = "🐍", url = "https://raw.githubusercontent.com/hgvuyguyg/sbqr/main/路线"},
     }
 }
 
