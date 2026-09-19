@@ -1,0 +1,414 @@
+--============================================================
+-- 单色 · WindUI
+--============================================================
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+
+--============================================================
+-- WindUI
+--============================================================
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+if not WindUI then warn("WindUI 加载失败") return end
+
+WindUI:AddTheme({
+    Name = "冰白",
+    Accent = "#80C0FF",
+    Outline = "#6090C0",
+    Text = "#FFFFFF",
+    Placeholder = "#D0E0FF",
+})
+
+local Window = WindUI:CreateWindow({
+    Title = "黑脚本--单色",
+    Icon = "solar:moon-bold",
+    Size = UDim2.fromOffset(420, 350),
+    ToggleKey = Enum.KeyCode.RightShift,
+    Theme = "冰白",
+    Transparent = true,
+    ScrollBarEnabled = true,
+})
+
+--============================================================
+-- 公告页
+--============================================================
+local NoticeTab = Window:Tab({Title = "公告", Icon = "solar:info-circle-bold"})
+
+NoticeTab:Paragraph({
+    Title = "黑脚本--单色 v1.0.0",
+    Desc = "最新版本 | 逃脱透视工具",
+})
+
+NoticeTab:Divider()
+
+NoticeTab:Paragraph({
+    Title = "📋 功能列表",
+    Desc = "• 密码显示 — 自动读取密码纸\n" ..
+           "• 衣柜透视 — 高亮隐藏点 + 距离\n" ..
+           "• 抽屉透视 — 高亮抽屉 + 距离\n" ..
+           "• 鬼透视 — 追踪鬼位置 + 距离\n" ..
+           "• 夜视模式 — 提亮场景看清黑暗",
+})
+
+NoticeTab:Divider()
+
+NoticeTab:Paragraph({
+    Title = "🆕 最新版本 v1.0.0",
+    Desc = "• 新增密码自动读取\n" ..
+           "• 新增衣柜/抽屉透视\n" ..
+           "• 新增鬼追踪 + 距离\n" ..
+           "• 新增夜视模式\n" ..
+           "• 冰白主题 UI",
+})
+
+NoticeTab:Divider()
+
+NoticeTab:Paragraph({
+    Title = "📌 当前版本",
+    Desc = "版本号：v1.0.0",
+})
+
+--============================================================
+-- 透视页
+--============================================================
+local Tab = Window:Tab({Title = "透视", Icon = "solar:eye-bold"})
+
+local codeShow = Tab:Paragraph({
+    Title = "🌙 密码",
+    Desc = "读取中...",
+})
+
+--============================================================
+-- 状态（默认全关）
+--============================================================
+local wardrobeESP = false
+local drawerESP = false
+local ghostESP = false
+local nightVision = false
+
+--============================================================
+-- 通用高亮+名字+距离
+--============================================================
+local cache = {}
+
+local function getObjPos(obj)
+    if obj:IsA("BasePart") then return obj.Position end
+    if obj:IsA("Model") then
+        local p = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+        if p then return p.Position end
+    end
+    return nil
+end
+
+local function createLabel(obj, displayName, fillColor, outlineColor, labelType)
+    if not obj or not obj.Parent then return end
+    if cache[obj] then return end
+    local adornee = obj
+    if obj:IsA("Model") then
+        adornee = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+    end
+    if not adornee then return end
+
+    local hl = Instance.new("Highlight")
+    hl.Adornee = obj
+    hl.FillColor = fillColor
+    hl.FillTransparency = 0.5
+    hl.OutlineColor = outlineColor
+    hl.OutlineTransparency = 0
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    hl.Parent = game:GetService("CoreGui")
+
+    local bb = Instance.new("BillboardGui")
+    bb.Adornee = adornee
+    bb.Size = UDim2.new(0, 200, 0, 40)
+    bb.StudsOffset = Vector3.new(0, 3, 0)
+    bb.AlwaysOnTop = true
+    bb.MaxDistance = 1000
+    bb.Parent = game:GetService("CoreGui")
+
+    local textLbl = Instance.new("TextLabel")
+    textLbl.Size = UDim2.new(1, 0, 1, 0)
+    textLbl.BackgroundTransparency = 1
+    textLbl.Text = displayName
+    textLbl.TextColor3 = fillColor
+    textLbl.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    textLbl.TextStrokeTransparency = 0
+    textLbl.TextSize = 14
+    textLbl.Font = Enum.Font.GothamBold
+    textLbl.Parent = bb
+
+    cache[obj] = { hl = hl, bb = bb, textLbl = textLbl, name = displayName, type = labelType }
+end
+
+--============================================================
+-- 扫描衣柜 + 抽屉
+--============================================================
+local function scanObjects()
+    local mono = workspace:FindFirstChild("monochrome")
+    if not mono then return end
+    for _, o in pairs(mono:GetDescendants()) do
+        if wardrobeESP and (o:IsA("Model") or o:IsA("BasePart")) then
+            local n = o.Name:lower()
+            if n:find("wardrobe") or n:find("closet") or n:find("locker")
+               or n:find("cupboard") or n:find("cabinet")
+               or n:find("hiding") or n:find("hide") then
+                if not cache[o] then
+                    createLabel(o, o.Name, Color3.fromRGB(255, 200, 50), Color3.fromRGB(255, 150, 0), "wardrobe")
+                end
+            end
+        end
+        if drawerESP and o:IsA("ProximityPrompt") and o.Name:lower():find("drawer") then
+            local attach = o.Parent
+            local part = attach and attach.Parent
+            if part and part:IsA("BasePart") and not cache[part] then
+                createLabel(part, part.Name, Color3.fromRGB(200, 150, 255), Color3.fromRGB(150, 100, 255), "drawer")
+            end
+        end
+    end
+end
+
+--============================================================
+-- 鬼
+--============================================================
+local ghostHL = nil
+local ghostBB = nil
+local ghostText = nil
+local lastGhost = nil
+local PINK = Color3.fromRGB(255, 105, 180)
+
+local function createGhostESP(ver)
+    if ghostHL then ghostHL:Destroy() end
+    ghostHL = Instance.new("Highlight")
+    ghostHL.Adornee = ver
+    ghostHL.FillColor = PINK
+    ghostHL.FillTransparency = 0.35
+    ghostHL.OutlineColor = PINK
+    ghostHL.OutlineTransparency = 0.2
+    ghostHL.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    ghostHL.Parent = game:GetService("CoreGui")
+
+    if ghostBB then ghostBB:Destroy() end
+    ghostBB = Instance.new("BillboardGui")
+    ghostBB.Adornee = ver
+    ghostBB.Size = UDim2.new(0, 240, 0, 50)
+    ghostBB.StudsOffset = Vector3.new(0, 5, 0)
+    ghostBB.AlwaysOnTop = true
+    ghostBB.MaxDistance = 1000
+    ghostBB.Parent = game:GetService("CoreGui")
+
+    ghostText = Instance.new("TextLabel")
+    ghostText.Size = UDim2.new(1, 0, 1, 0)
+    ghostText.BackgroundTransparency = 1
+    ghostText.Text = "鬼"
+    ghostText.TextColor3 = PINK
+    ghostText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    ghostText.TextStrokeTransparency = 0
+    ghostText.TextSize = 20
+    ghostText.Font = Enum.Font.GothamBold
+    ghostText.Parent = ghostBB
+end
+
+local function clearGhost()
+    if ghostHL then ghostHL:Destroy(); ghostHL = nil end
+    if ghostBB then ghostBB:Destroy(); ghostBB = nil end
+    lastGhost = nil
+end
+
+local function updateGhost()
+    if not ghostESP then clearGhost() return end
+    local ver = workspace:FindFirstChild("VER")
+    if ver then
+        if lastGhost ~= ver then
+            createGhostESP(ver)
+            lastGhost = ver
+        end
+        if ghostText then
+            local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local verPart = ver:FindFirstChild("RootPart") or ver:FindFirstChildWhichIsA("BasePart")
+                if verPart then
+                    local dist = math.floor((verPart.Position - hrp.Position).Magnitude)
+                    ghostText.Text = string.format("鬼\n[%d m]", dist)
+                end
+            end
+        end
+    else
+        clearGhost()
+    end
+end
+
+--============================================================
+-- 密码
+--============================================================
+local function updateCodeDisplay()
+    local mono = workspace:FindFirstChild("monochrome")
+    if not mono then
+        codeShow:SetDesc("未找到场景")
+        return
+    end
+    local codeNote = mono:FindFirstChild("CodeNote")
+    if not codeNote then
+        codeShow:SetDesc("未找到密码纸")
+        return
+    end
+    local printed = codeNote:FindFirstChild("Printed")
+    if not printed then
+        codeShow:SetDesc("未找到密码")
+        return
+    end
+    local d = printed:FindFirstChild("Digits")
+    if d and d:IsA("TextLabel") then
+        codeShow:SetDesc(d.Text)
+    else
+        codeShow:SetDesc("读取中...")
+    end
+end
+
+--============================================================
+-- 夜视
+--============================================================
+local nightCC = nil
+local function setNightVision(on)
+    if on then
+        Lighting.Brightness = 4
+        Lighting.Ambient = Color3.fromRGB(200, 200, 200)
+        Lighting.OutdoorAmbient = Color3.fromRGB(200, 200, 200)
+        Lighting.ClockTime = 12
+        if not nightCC then
+            nightCC = Instance.new("ColorCorrectionEffect")
+            nightCC.Name = "NightVisionCC"
+            nightCC.Brightness = 0.15
+            nightCC.Contrast = 0
+            nightCC.Saturation = 0
+            nightCC.TintColor = Color3.fromRGB(255, 255, 255)
+            nightCC.Parent = Lighting
+        end
+    else
+        if nightCC then nightCC:Destroy(); nightCC = nil end
+        Lighting.Brightness = 3
+        Lighting.Ambient = Color3.fromRGB(180, 180, 180)
+        Lighting.OutdoorAmbient = Color3.fromRGB(180, 180, 180)
+    end
+end
+
+--============================================================
+-- 距离更新
+--============================================================
+local function updateDistances()
+    local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local myPos = hrp.Position
+    for obj, data in pairs(cache) do
+        if not obj.Parent then
+            if data.hl then data.hl:Destroy() end
+            if data.bb then data.bb:Destroy() end
+            cache[obj] = nil
+        else
+            local pos = getObjPos(obj)
+            if pos then
+                local dist = math.floor((pos - myPos).Magnitude)
+                data.textLbl.Text = string.format("%s\n[%d m]", data.name, dist)
+            end
+        end
+    end
+end
+
+--============================================================
+-- 主循环
+--============================================================
+task.spawn(function()
+    while Window do
+        pcall(scanObjects)
+        task.wait(1.5)
+    end
+end)
+
+task.spawn(function()
+    while Window do
+        pcall(updateGhost)
+        pcall(updateDistances)
+        pcall(updateCodeDisplay)
+        task.wait(0.5)
+    end
+end)
+
+--============================================================
+-- 透视页 UI
+--============================================================
+Tab:Toggle({
+    Title = "衣柜透视",
+    Value = false,
+    Callback = function(v) wardrobeESP = v end,
+})
+
+Tab:Toggle({
+    Title = "抽屉透视",
+    Value = false,
+    Callback = function(v) drawerESP = v end,
+})
+
+Tab:Toggle({
+    Title = "鬼透视",
+    Value = false,
+    Callback = function(v) ghostESP = v end,
+})
+
+Tab:Toggle({
+    Title = "夜视模式",
+    Value = false,
+    Callback = function(v)
+        nightVision = v
+        setNightVision(v)
+    end,
+})
+
+--============================================================
+-- 设置页
+--============================================================
+local SettingsTab = Window:Tab({Title = "设置", Icon = "solar:settings-bold"})
+
+local statusPara = SettingsTab:Paragraph({
+    Title = "📊 功能状态",
+    Desc = "加载中...",
+})
+
+local fpsPara = SettingsTab:Paragraph({
+    Title = "🎮 性能",
+    Desc = "FPS: --",
+})
+
+-- FPS 计算
+local fps = 0
+local frameCount = 0
+local lastTime = tick()
+
+RunService.RenderStepped:Connect(function()
+    frameCount = frameCount + 1
+    local now = tick()
+    if now - lastTime >= 1 then
+        fps = frameCount
+        frameCount = 0
+        lastTime = now
+    end
+end)
+
+-- 状态更新
+task.spawn(function()
+    while Window do
+        task.wait(1)
+        local function st(v) return v and "✅ 开启" or "❌ 关闭" end
+        statusPara:SetDesc(
+            "衣柜透视：" .. st(wardrobeESP) .. "\n" ..
+            "抽屉透视：" .. st(drawerESP) .. "\n" ..
+            "鬼透视：" .. st(ghostESP) .. "\n" ..
+            "夜视模式：" .. st(nightVision)
+        )
+        fpsPara:SetDesc("FPS: " .. tostring(fps))
+    end
+end)
+
+--============================================================
+-- 通知
+--============================================================
+WindUI:Notify({Title = "单色", Content = "v1.0.0 加载完成", Duration = 2})
